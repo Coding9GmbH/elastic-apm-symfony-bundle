@@ -25,50 +25,39 @@ use ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
+/**
+ * Twig extension for APM trace context functions
+ */
 class ElasticApmExtension extends AbstractExtension
 {
     private ElasticApmInteractorInterface $interactor;
-    private array $rumConfig;
 
-    public function __construct(ElasticApmInteractorInterface $interactor, array $rumConfig)
+    public function __construct(ElasticApmInteractorInterface $interactor)
     {
         $this->interactor = $interactor;
-        $this->rumConfig = $rumConfig;
     }
 
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('apm_rum_config', [$this, 'getRumConfig']),
-            new TwigFunction('apm_trace_id', [$this, 'getTraceId']),
-            new TwigFunction('apm_transaction_id', [$this, 'getTransactionId']),
+            new TwigFunction('apm_trace_context', [$this, 'getTraceContext']),
+            new TwigFunction('apm_current_transaction', [$this, 'getCurrentTransaction']),
         ];
     }
 
-    public function getRumConfig(): array
+    /**
+     * Get current trace context for distributed tracing
+     */
+    public function getTraceContext(): array
     {
-        if (!$this->rumConfig['rum']['enabled']) {
-            return ['enabled' => false];
-        }
-
-        return [
-            'enabled' => true,
-            'serviceName' => $this->rumConfig['rum']['service_name'],
-            'serverUrl' => $this->rumConfig['rum']['server_url'],
-            'serviceVersion' => $this->rumConfig['service']['version'],
-            'environment' => $this->rumConfig['service']['environment'],
-            'pageLoadTraceId' => $this->interactor->getCurrentTraceId(),
-            'pageLoadTransactionId' => $this->interactor->getCurrentTransactionId(),
-        ];
+        return $this->interactor->getTraceContext();
     }
 
-    public function getTraceId(): ?string
+    /**
+     * Get current transaction for debugging purposes
+     */
+    public function getCurrentTransaction(): ?\ElasticApmBundle\Model\Transaction
     {
-        return $this->interactor->getCurrentTraceId();
-    }
-
-    public function getTransactionId(): ?string
-    {
-        return $this->interactor->getCurrentTransactionId();
+        return $this->interactor->getCurrentTransaction();
     }
 }

@@ -70,11 +70,6 @@ class ConfigurationTest extends TestCase
                 ],
                 'transactions' => [
                     'naming_strategy' => 'controller'
-                ],
-                'rum' => [
-                    'enabled' => true,
-                    'server_url' => 'http://rum-server:8200',
-                    'service_name' => 'my-frontend'
                 ]
             ]
         ];
@@ -87,8 +82,6 @@ class ConfigurationTest extends TestCase
         $this->assertEquals('secret123', $config['server']['secret_token']);
         $this->assertEquals('production', $config['service']['environment']);
         $this->assertEquals('controller', $config['transactions']['naming_strategy']);
-        $this->assertTrue($config['rum']['enabled']);
-        $this->assertEquals('http://rum-server:8200', $config['rum']['server_url']);
     }
 
     public function testInvalidTransactionNamingStrategy(): void

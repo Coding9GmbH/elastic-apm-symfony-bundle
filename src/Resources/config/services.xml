@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--
- Copyright (c) 2025 Your Name
+ Copyright (c) 2025 Coding 9 GmbH
 
  Permission is hereby granted, free of charge, to any person obtaining a copy of
  this software and associated documentation files (the "Software"), to deal in
@@ -51,44 +51,7 @@
         <!-- Twig Extension -->
         <service id="elastic_apm.twig_extension" class="ElasticApmBundle\Twig\ElasticApmExtension">
             <argument type="service" id="elastic_apm.interactor"/>
-            <argument type="collection">
-                <argument key="rum" type="collection">
-                    <argument key="enabled">%elastic_apm.rum.enabled%</argument>
-                    <argument key="service_name">%elastic_apm.rum.service_name%</argument>
-                    <argument key="server_url">%elastic_apm.rum.server_url%</argument>
-                </argument>
-                <argument key="service" type="collection">
-                    <argument key="version">%elastic_apm.service.version%</argument>
-                    <argument key="environment">%elastic_apm.service.environment%</argument>
-                </argument>
-            </argument>
             <tag name="twig.extension"/>
-        </service>
-
-        <!-- Secure RUM Extension (Alternative to API endpoint) -->
-        <service id="elastic_apm.secure_rum_extension" class="ElasticApmBundle\Twig\SecureRumExtension">
-            <argument type="collection">
-                <argument key="enabled">%elastic_apm.rum.enabled%</argument>
-                <argument key="service_name">%elastic_apm.rum.service_name%</argument>
-                <argument key="server_url">%elastic_apm.rum.server_url%</argument>
-            </argument>
-            <tag name="twig.extension"/>
-        </service>
-
-        <!-- APM Controller for RUM config endpoint -->
-        <service id="elastic_apm.controller.apm" class="ElasticApmBundle\Controller\ApmController">
-            <argument type="collection">
-                <argument key="rum" type="collection">
-                    <argument key="enabled">%elastic_apm.rum.enabled%</argument>
-                    <argument key="service_name">%elastic_apm.rum.service_name%</argument>
-                    <argument key="server_url">%elastic_apm.rum.server_url%</argument>
-                </argument>
-                <argument key="service" type="collection">
-                    <argument key="version">%elastic_apm.service.version%</argument>
-                    <argument key="environment">%elastic_apm.service.environment%</argument>
-                </argument>
-            </argument>
-            <tag name="controller.service_arguments"/>
         </service>
 
         <!-- Helper trait for APM tracing -->

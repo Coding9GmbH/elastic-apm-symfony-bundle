@@ -51,8 +51,7 @@
     },
     "suggest": {
         "symfony/messenger": "Required for message queue APM tracking",
-        "symfony/twig-bundle": "Required for RUM Twig extensions",
-        "symfony/security-bundle": "Required for securing RUM endpoints",
+        "symfony/twig-bundle": "Required for APM Twig extensions",
         "ext-curl": "Required for sending APM data to servers"
     },
     "autoload": {
