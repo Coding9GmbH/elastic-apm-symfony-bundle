@@ -1,0 +1,53 @@
+# Default configuration for ElasticApmBundle
+elastic_apm:
+    enabled: '%env(bool:ELASTIC_APM_ENABLED)%'
+    interactor: elastic_apm # Options: elastic_apm, opentracing, blackhole, adaptive
+    logging: '%env(bool:ELASTIC_APM_LOGGING)%'
+    
+    server:
+        url: '%env(ELASTIC_APM_SERVER_URL)%'
+        secret_token: '%env(ELASTIC_APM_SECRET_TOKEN)%'
+        api_key: '%env(ELASTIC_APM_API_KEY)%'
+    
+    opentracing:
+        jaeger_endpoint: '%env(ELASTIC_APM_JAEGER_ENDPOINT)%'
+        zipkin_endpoint: '%env(ELASTIC_APM_ZIPKIN_ENDPOINT)%'
+        format: jaeger
+        b3_propagation: true
+        w3c_propagation: true
+        jaeger_propagation: true
+    
+    service:
+        name: '%env(ELASTIC_APM_SERVICE_NAME)%'
+        version: '%env(ELASTIC_APM_SERVICE_VERSION)%'
+        environment: '%env(APP_ENV)%'
+    
+    transactions:
+        sample_rate: '%env(float:ELASTIC_APM_TRANSACTION_SAMPLE_RATE)%'
+        max_spans: '%env(int:ELASTIC_APM_TRANSACTION_MAX_SPANS)%'
+        naming_strategy: route # Options: route, controller, uri, service, message
+    
+    exceptions:
+        enabled: true
+        ignored_exceptions: []
+        unwrap_exceptions: false
+    
+    memory:
+        track_usage: '%env(bool:ELASTIC_APM_TRACK_MEMORY)%'
+        usage_label: memory_usage
+    
+    messaging:
+        enabled: true
+        auto_instrument_handlers: false
+        ignored_transports: []
+        ignored_message_classes: []
+        track_message_data: true
+    
+    track_deprecations: false
+    track_warnings: false
+    
+    rum:
+        enabled: '%env(bool:ELASTIC_APM_RUM_ENABLED)%'
+        expose_config_endpoint: false  # Security: disabled by default
+        service_name: '%env(ELASTIC_APM_RUM_SERVICE_NAME)%'
+        server_url: '%env(ELASTIC_APM_RUM_SERVER_URL)%'

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <!-- Request Listener -->
+        <service id="elastic_apm.listener.request" class="ElasticApmBundle\Listener\RequestListener">
+            <argument type="service" id="elastic_apm.interactor"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <!-- Exception Listener -->
+        <service id="elastic_apm.listener.exception" class="ElasticApmBundle\Listener\ExceptionListener">
+            <argument type="service" id="elastic_apm.interactor"/>
+            <argument>%elastic_apm.exceptions.ignored_exceptions%</argument>
+            <argument>%elastic_apm.exceptions.unwrap_exceptions%</argument>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <!-- Command Listener -->
+        <service id="elastic_apm.listener.command" class="ElasticApmBundle\Listener\CommandListener">
+            <argument type="service" id="elastic_apm.interactor"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <!-- Messenger Listener -->
+        <service id="elastic_apm.listener.messenger" class="ElasticApmBundle\Listener\MessengerListener">
+            <argument type="service" id="elastic_apm.interactor"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+    </services>
+</container>

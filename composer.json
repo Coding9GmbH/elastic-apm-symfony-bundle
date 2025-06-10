@@ -1,0 +1,85 @@
+{
+    "name": "yourvendor/elastic-apm-symfony-bundle",
+    "type": "symfony-bundle",
+    "description": "Symfony bundle for Elastic APM integration with comprehensive support for distributed tracing, message queue tracking, and OpenTracing compatibility",
+    "keywords": [
+        "elastic",
+        "apm",
+        "symfony",
+        "bundle",
+        "monitoring",
+        "performance",
+        "tracing",
+        "opentracing",
+        "jaeger",
+        "zipkin",
+        "messenger",
+        "queue"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Your Name",
+            "email": "your.email@example.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "symfony/framework-bundle": "^5.4|^6.0|^7.0",
+        "symfony/config": "^5.4|^6.0|^7.0",
+        "symfony/dependency-injection": "^5.4|^6.0|^7.0",
+        "symfony/http-kernel": "^5.4|^6.0|^7.0",
+        "symfony/event-dispatcher": "^5.4|^6.0|^7.0",
+        "psr/log": "^1.0|^2.0|^3.0",
+        "nipwaayoni/elastic-apm-php-agent": "^7.0|^8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5|^10.0",
+        "symfony/test-pack": "^1.0",
+        "symfony/messenger": "^5.4|^6.0|^7.0",
+        "symfony/console": "^5.4|^6.0|^7.0",
+        "symfony/twig-bundle": "^5.4|^6.0|^7.0",
+        "symfony/security-bundle": "^5.4|^6.0|^7.0",
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "phpstan/phpstan": "^1.0",
+        "phpstan/phpstan-symfony": "^1.0",
+        "opentracing/opentracing": "^1.0",
+        "jaegertracing/jaeger-client-php": "^1.0"
+    },
+    "suggest": {
+        "symfony/messenger": "Required for message queue APM tracking",
+        "symfony/twig-bundle": "Required for RUM Twig extensions",
+        "symfony/security-bundle": "Required for securing RUM endpoints",
+        "ext-curl": "Required for sending APM data to servers"
+    },
+    "autoload": {
+        "psr-4": {
+            "ElasticApmBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ElasticApmBundle\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "symfony/flex": true
+        }
+    },
+    "extra": {
+        "symfony": {
+            "allow-contrib": true,
+            "require": "^5.4|^6.0|^7.0"
+        },
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "cs-fix": "vendor/bin/php-cs-fixer fix",
+        "phpstan": "vendor/bin/phpstan analyse src --level=5"
+    }
+}

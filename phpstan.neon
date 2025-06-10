@@ -1,0 +1,16 @@
+parameters:
+    level: 5
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - tests/Functional/var
+        - tests/Functional/cache
+    symfony:
+        container_xml_path: tests/Functional/var/cache/test/ElasticApmBundle_Tests_Functional_AppKernel_devDebugContainer.xml
+    ignoreErrors:
+        # Ignore errors for optional dependencies
+        - '#Call to method .* on an unknown class OpenTracing\\.*#'
+        - '#Call to method .* on an unknown class Jaeger\\.*#'
+        # Ignore Symfony deprecations
+        - '#Method Symfony\\Component\\HttpKernel\\Event\\.*::(getException|setResponse)\(\) is deprecated#'

@@ -1,7 +1,14 @@
-# These are some examples of commonly ignored file patterns.
-# You should customize this list as applicable to your project.
-# Learn more about .gitignore:
-#     https://www.atlassian.com/git/tutorials/saving-changes/gitignore
+# Symfony/PHP specific
+/vendor/
+/composer.lock
+/.php-cs-fixer.cache
+/.phpunit.result.cache
+/phpunit.xml
+/var/
+/coverage/
+/coverage.xml
+/tests/Functional/var/
+/tests/Functional/cache/
 
 # Node artifact files
 node_modules/
@@ -21,10 +28,12 @@ dist/
 
 # Maven
 target/
-dist/
 
 # JetBrains IDE
 .idea/
+
+# VSCode
+.vscode/
 
 # Unit test reports
 TEST*.xml
@@ -47,4 +56,3 @@ Thumbs.db
 *.flv
 *.mov
 *.wmv
-
