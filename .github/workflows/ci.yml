@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['7.4', '8.0', '8.1', '8.2', '8.3']
+        symfony-version: ['^5.4', '^6.0', '^7.0']
+        exclude:
+          - php-version: '7.4'
+            symfony-version: '^6.0'
+          - php-version: '7.4'
+            symfony-version: '^7.0'
+          - php-version: '8.0'
+            symfony-version: '^7.0'
+          - php-version: '8.1'
+            symfony-version: '^7.0'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        extensions: mbstring, xml, json
+        coverage: xdebug
+
+    - name: Validate composer.json
+      run: composer validate
+
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install Symfony Flex
+      run: composer global config --no-plugins allow-plugins.symfony/flex true && composer global require symfony/flex
+
+    - name: Install dependencies
+      run: |
+        composer require "symfony/framework-bundle:${{ matrix.symfony-version }}" --no-update
+        composer update --prefer-dist --no-progress
+
+    - name: Run PHPUnit tests
+      run: vendor/bin/phpunit --coverage-clover coverage.xml
+
+    - name: Upload coverage to Codecov
+      if: matrix.php-version == '8.2' && matrix.symfony-version == '^6.0'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  code-style:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, xml, json
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress
+
+    - name: Run PHP CS Fixer
+      run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, xml, json
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress
+
+    - name: Run PHPStan
+      run: vendor/bin/phpstan analyse src tests --level=5
