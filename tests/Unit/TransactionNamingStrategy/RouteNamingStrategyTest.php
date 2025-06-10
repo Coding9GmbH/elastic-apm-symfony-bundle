@@ -23,7 +23,7 @@ class RouteNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertEquals('app_home_index', $name);
+        $this->assertEquals('GET app_home_index', $name);
     }
 
     public function testGetTransactionNameWithoutRoute(): void
@@ -33,7 +33,7 @@ class RouteNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertEquals('/test-uri', $name);
+        $this->assertEquals('GET unknown', $name);
     }
 
     public function testGetTransactionNameWithEmptyUri(): void
@@ -42,7 +42,7 @@ class RouteNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertEquals('/', $name);
+        $this->assertEquals('GET unknown', $name);
     }
 
     public function testGetTransactionNameWithQueryString(): void
@@ -52,6 +52,6 @@ class RouteNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertEquals('/test-uri', $name);
+        $this->assertEquals('GET unknown', $name);
     }
 }

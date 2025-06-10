@@ -3,132 +3,217 @@
 namespace ElasticApmBundle\Tests\Unit\Interactor;
 
 use ElasticApmBundle\Interactor\ElasticApmInteractor;
-use Nipwaayoni\Agent;
-use Nipwaayoni\Events\Transaction;
-use Nipwaayoni\Events\Span;
-use Nipwaayoni\Events\Error;
+use ElasticApmBundle\Model\Transaction;
+use ElasticApmBundle\Model\Span;
+use ElasticApmBundle\Model\Error;
+use ElasticApmBundle\Client\ApmClient;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class ElasticApmInteractorTest extends TestCase
 {
-    /** @var Agent|MockObject */
-    private $agent;
-
     /** @var ElasticApmInteractor */
     private $interactor;
+    
+    /** @var array */
+    private $config;
 
     protected function setUp(): void
     {
-        $this->agent = $this->createMock(Agent::class);
-        $this->interactor = new ElasticApmInteractor($this->agent);
+        $this->config = [
+            'enabled' => true,
+            'server' => [
+                'url' => 'http://localhost:8200',
+                'secret_token' => 'test_token',
+                'api_key' => null,
+            ],
+            'transactions' => [
+                'sample_rate' => 1.0,
+            ],
+        ];
+        
+        $this->interactor = new ElasticApmInteractor($this->config);
     }
 
     public function testStartTransaction(): void
     {
-        $transaction = $this->createMock(Transaction::class);
-        $this->agent->expects($this->once())
-            ->method('startTransaction')
-            ->with('test_transaction', 'request')
-            ->willReturn($transaction);
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
 
-        $result = $this->interactor->startTransaction('test_transaction', 'request');
-
-        $this->assertSame($transaction, $result);
+        $this->assertInstanceOf(Transaction::class, $transaction);
+        $this->assertEquals('test_transaction', $transaction->getName());
+        $this->assertEquals('request', $transaction->getType());
+        $this->assertSame($transaction, $this->interactor->getCurrentTransaction());
     }
 
     public function testStopTransaction(): void
     {
-        $transaction = $this->createMock(Transaction::class);
-        $transaction->expects($this->once())
-            ->method('stop')
-            ->willReturn($transaction);
-
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
+        
         $this->interactor->stopTransaction($transaction, 200);
 
-        $transaction->expects($this->once())
-            ->method('setResult')
-            ->with('HTTP 2xx');
+        $this->assertEquals('HTTP 2xx', $transaction->getResult());
+        $this->assertNull($this->interactor->getCurrentTransaction());
     }
 
     public function testStartSpan(): void
     {
-        $span = $this->createMock(Span::class);
-        $transaction = $this->createMock(Transaction::class);
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
         
-        $this->agent->expects($this->once())
-            ->method('factory')
-            ->willReturn($this->agent);
-        
-        $this->agent->expects($this->once())
-            ->method('newSpan')
-            ->with('test_span', $transaction)
-            ->willReturn($span);
+        $span = $this->interactor->startSpan('test_span', 'db', 'mysql', $transaction);
 
-        $span->expects($this->once())
-            ->method('start')
-            ->willReturn($span);
-
-        $result = $this->interactor->startSpan('test_span', 'db', null, $transaction);
-
-        $this->assertSame($span, $result);
+        $this->assertInstanceOf(Span::class, $span);
+        $this->assertEquals('test_span', $span->getName());
+        $this->assertEquals('db', $span->getType());
+        $this->assertEquals('mysql', $span->getSubtype());
     }
 
     public function testStopSpan(): void
     {
-        $span = $this->createMock(Span::class);
-        $span->expects($this->once())
-            ->method('stop');
-
+        $span = $this->interactor->startSpan('test_span', 'db');
+        
+        // This should not throw any exceptions
         $this->interactor->stopSpan($span);
+        
+        $this->assertTrue(true);
     }
 
     public function testCaptureException(): void
     {
         $exception = new \Exception('Test exception');
-        $error = $this->createMock(Error::class);
-
-        $this->agent->expects($this->once())
-            ->method('factory')
-            ->willReturn($this->agent);
-
-        $this->agent->expects($this->once())
-            ->method('newError')
-            ->with($exception)
-            ->willReturn($error);
-
-        $this->agent->expects($this->once())
-            ->method('putEvent')
-            ->with($error);
-
+        
+        // This should not throw any exceptions
         $this->interactor->captureException($exception);
+        
+        $this->assertTrue(true);
+    }
+    
+    public function testCaptureError(): void
+    {
+        // This should not throw any exceptions
+        $this->interactor->captureError('Test error', ['context' => 'value']);
+        
+        $this->assertTrue(true);
     }
 
     public function testSetTransactionCustomData(): void
     {
-        $transaction = $this->createMock(Transaction::class);
-        $transaction->expects($this->once())
-            ->method('setMeta')
-            ->with(['custom' => 'data']);
-
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
+        
         $this->interactor->setTransactionCustomData($transaction, ['custom' => 'data']);
+
+        $this->assertEquals(['custom' => 'data'], $transaction->getCustomContext());
     }
 
     public function testSetSpanCustomData(): void
     {
-        $span = $this->createMock(Span::class);
-        $span->expects($this->once())
-            ->method('setMeta')
-            ->with(['custom' => 'data']);
-
+        $span = $this->interactor->startSpan('test_span', 'db');
+        
         $this->interactor->setSpanCustomData($span, ['custom' => 'data']);
+
+        $this->assertEquals(['custom' => 'data'], $span->getContext());
+    }
+    
+    public function testSetUserContext(): void
+    {
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
+        
+        $this->interactor->setUserContext(['id' => '123', 'username' => 'test']);
+        
+        $this->assertEquals(['id' => '123', 'username' => 'test'], $transaction->getUserContext());
+    }
+    
+    public function testSetCustomContext(): void
+    {
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
+        
+        $this->interactor->setCustomContext(['key' => 'value']);
+        
+        $this->assertEquals(['key' => 'value'], $transaction->getCustomContext());
+    }
+    
+    public function testSetLabels(): void
+    {
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
+        
+        $this->interactor->setLabels(['environment' => 'test']);
+        
+        $this->assertEquals(['environment' => 'test'], $transaction->getLabels());
     }
 
     public function testFlush(): void
     {
-        $this->agent->expects($this->once())
-            ->method('send');
-
+        // This should not throw any exceptions
         $this->interactor->flush();
+        
+        $this->assertTrue(true);
+    }
+    
+    public function testIsEnabled(): void
+    {
+        $this->assertTrue($this->interactor->isEnabled());
+    }
+    
+    public function testIsRecording(): void
+    {
+        $this->assertTrue($this->interactor->isRecording());
+    }
+    
+    public function testGetTraceContext(): void
+    {
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
+        
+        $context = $this->interactor->getTraceContext();
+        
+        $this->assertArrayHasKey('traceparent', $context);
+        $this->assertArrayHasKey('tracestate', $context);
+        $this->assertStringContainsString($transaction->getTraceId(), $context['traceparent']);
+        $this->assertStringContainsString($transaction->getId(), $context['traceparent']);
+    }
+    
+    public function testCaptureCurrentSpan(): void
+    {
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
+        
+        $result = $this->interactor->captureCurrentSpan(
+            'test_span',
+            'custom',
+            function() {
+                return 'callback result';
+            },
+            ['context' => 'value']
+        );
+        
+        $this->assertEquals('callback result', $result);
+    }
+    
+    public function testCaptureCurrentSpanWithException(): void
+    {
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
+        
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Test exception');
+        
+        $this->interactor->captureCurrentSpan(
+            'test_span',
+            'custom',
+            function() {
+                throw new \Exception('Test exception');
+            }
+        );
+    }
+    
+    public function testDisabledInteractor(): void
+    {
+        $config = $this->config;
+        $config['enabled'] = false;
+        
+        $disabledInteractor = new ElasticApmInteractor($config);
+        
+        $this->assertFalse($disabledInteractor->isEnabled());
+        $this->assertFalse($disabledInteractor->isRecording());
+        
+        $transaction = $disabledInteractor->startTransaction('test', 'request');
+        $this->assertInstanceOf(Transaction::class, $transaction);
+        $this->assertNull($disabledInteractor->getCurrentTransaction());
     }
 }

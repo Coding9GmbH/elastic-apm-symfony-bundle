@@ -4,8 +4,8 @@ namespace ElasticApmBundle\Tests\Unit\Interactor;
 
 use ElasticApmBundle\Interactor\AdaptiveInteractor;
 use ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
-use Nipwaayoni\Events\Transaction;
-use Nipwaayoni\Events\Span;
+use ElasticApmBundle\Model\Transaction;
+use ElasticApmBundle\Model\Span;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 

@@ -21,12 +21,13 @@ class BlackholeInteractorTest extends TestCase
         $this->assertFalse($this->interactor->isEnabled());
     }
 
-    public function testBeginTransactionDoesNothing(): void
+    public function testStartTransactionReturnsTransaction(): void
     {
-        $this->interactor->beginTransaction('test', 'request');
+        $transaction = $this->interactor->startTransaction('test', 'request');
         
-        // Should not throw any exceptions
-        $this->assertTrue(true);
+        $this->assertInstanceOf(\ElasticApmBundle\Model\Transaction::class, $transaction);
+        $this->assertEquals('test', $transaction->getName());
+        $this->assertEquals('request', $transaction->getType());
     }
 
     public function testCaptureCurrentSpanExecutesCallback(): void
@@ -56,28 +57,49 @@ class BlackholeInteractorTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function testGetCurrentTraceIdReturnsNull(): void
+    public function testGetTraceContextReturnsEmptyArray(): void
     {
-        $this->assertNull($this->interactor->getCurrentTraceId());
+        $this->assertEquals([], $this->interactor->getTraceContext());
     }
 
-    public function testStartRequestTransactionDoesNothing(): void
+    public function testGetCurrentTransactionReturnsNull(): void
     {
-        $request = Request::create('/test');
+        $this->assertNull($this->interactor->getCurrentTransaction());
+    }
+
+    public function testStopTransactionDoesNothing(): void
+    {
+        $transaction = $this->interactor->startTransaction('test', 'request');
         
-        $this->interactor->startRequestTransaction($request);
+        $this->interactor->stopTransaction($transaction, 200);
         
         // Should not throw any exceptions
         $this->assertTrue(true);
     }
 
-    public function testEndRequestTransactionDoesNothing(): void
+    public function testStartSpanReturnsSpan(): void
     {
-        $response = new Response('test', 200);
+        $transaction = $this->interactor->startTransaction('test', 'request');
+        $span = $this->interactor->startSpan('test_span', 'db', 'mysql', $transaction);
         
-        $this->interactor->endRequestTransaction($response);
+        $this->assertInstanceOf(\ElasticApmBundle\Model\Span::class, $span);
+        $this->assertEquals('test_span', $span->getName());
+        $this->assertEquals('db', $span->getType());
+        $this->assertEquals('mysql', $span->getSubtype());
+    }
+
+    public function testStopSpanDoesNothing(): void
+    {
+        $span = $this->interactor->startSpan('test_span', 'db');
+        
+        $this->interactor->stopSpan($span);
         
         // Should not throw any exceptions
         $this->assertTrue(true);
+    }
+
+    public function testIsRecordingReturnsFalse(): void
+    {
+        $this->assertFalse($this->interactor->isRecording());
     }
 }

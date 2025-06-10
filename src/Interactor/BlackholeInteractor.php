@@ -2,102 +2,111 @@
 
 namespace ElasticApmBundle\Interactor;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use ElasticApmBundle\Model\Transaction;
+use ElasticApmBundle\Model\Span;
 
 /**
- * No-op implementation of ElasticApmInteractorInterface
- * This interactor does nothing and is used when APM is disabled
+ * No-op implementation of the APM interactor for testing or disabled state
  */
 class BlackholeInteractor implements ElasticApmInteractorInterface
 {
-    public function isEnabled(): bool
+    public function startTransaction(string $name, string $type): Transaction
     {
-        return false;
+        // Return a real transaction object that won't be sent anywhere
+        return new Transaction($name, $type);
     }
-
-    public function beginTransaction(string $name, string $type, ?float $timestamp = null): void
-    {
-        // No-op
-    }
-
-    public function beginCurrentTransaction(string $name, string $type, ?float $timestamp = null): void
+    
+    public function stopTransaction(?Transaction $transaction, ?int $result = null): void
     {
         // No-op
     }
-
-    public function endCurrentTransaction(?string $result = null, ?string $outcome = null): void
+    
+    public function startSpan(
+        string $name,
+        string $type,
+        ?string $subtype = null,
+        ?Transaction $transaction = null
+    ): Span {
+        // Return a real span object that won't be sent anywhere
+        $span = new Span($name, $type, $transaction);
+        if ($subtype !== null) {
+            $span->setSubtype($subtype);
+        }
+        return $span;
+    }
+    
+    public function stopSpan(Span $span): void
     {
         // No-op
     }
-
-    public function setTransactionContext(array $context): void
-    {
-        // No-op
-    }
-
-    public function setTransactionLabels(array $labels): void
-    {
-        // No-op
-    }
-
-    public function beginCurrentSpan(string $name, string $type, ?string $subType = null, ?string $action = null): void
-    {
-        // No-op
-    }
-
-    public function endCurrentSpan(): void
-    {
-        // No-op
-    }
-
-    public function captureCurrentSpan(string $name, string $type, callable $callback, ?string $subType = null, ?string $action = null): mixed
-    {
-        return $callback();
-    }
-
+    
     public function captureException(\Throwable $exception): void
     {
         // No-op
     }
-
-    public function captureError(string $type, string $message, ?string $file = null, ?int $line = null): void
+    
+    public function captureError(string $message, array $context = []): void
     {
         // No-op
     }
-
-    public function setUserContext(?string $id = null, ?string $email = null, ?string $username = null): void
+    
+    public function setTransactionCustomData(Transaction $transaction, array $data): void
     {
         // No-op
     }
-
+    
+    public function setSpanCustomData(Span $span, array $data): void
+    {
+        // No-op
+    }
+    
+    public function setUserContext(array $context): void
+    {
+        // No-op
+    }
+    
     public function setCustomContext(array $context): void
     {
         // No-op
     }
-
-    public function addTransactionLabel(string $key, $value): void
+    
+    public function setLabels(array $labels): void
     {
         // No-op
     }
-
-    public function getCurrentTraceId(): ?string
+    
+    public function flush(): void
+    {
+        // No-op
+    }
+    
+    public function isEnabled(): bool
+    {
+        return false;
+    }
+    
+    public function isRecording(): bool
+    {
+        return false;
+    }
+    
+    public function getCurrentTransaction(): ?Transaction
     {
         return null;
     }
-
-    public function getCurrentTransactionId(): ?string
+    
+    public function getTraceContext(): array
     {
-        return null;
+        return [];
     }
-
-    public function startRequestTransaction(Request $request): void
-    {
-        // No-op
-    }
-
-    public function endRequestTransaction(Response $response): void
-    {
-        // No-op
+    
+    public function captureCurrentSpan(
+        string $name,
+        string $type,
+        callable $callback,
+        array $context = []
+    ): mixed {
+        // Just execute the callback without any APM tracking
+        return $callback();
     }
 }

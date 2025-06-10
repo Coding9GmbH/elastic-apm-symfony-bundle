@@ -2,174 +2,119 @@
 
 namespace ElasticApmBundle\Interactor;
 
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use ElasticApmBundle\Model\Transaction;
+use ElasticApmBundle\Model\Span;
 
 /**
- * Adaptive interactor that conditionally delegates to another interactor
- * based on runtime conditions (e.g., environment, request parameters)
+ * Adaptive interactor that can switch between different interactors at runtime
  */
-class AdaptiveInteractor implements ElasticApmInteractorInterface, LoggerAwareInterface
+class AdaptiveInteractor implements ElasticApmInteractorInterface
 {
-    use LoggerAwareTrait;
-    private ElasticApmInteractorInterface $delegate;
-    private bool $enabled;
-    private array $enabledEnvironments;
-    private float $sampleRate;
-
-    public function __construct(
-        ElasticApmInteractorInterface $delegate,
-        bool $enabled = true,
-        array $enabledEnvironments = ['prod', 'staging'],
-        float $sampleRate = 1.0
-    ) {
-        $this->delegate = $delegate;
-        $this->enabled = $enabled;
-        $this->enabledEnvironments = $enabledEnvironments;
-        $this->sampleRate = $sampleRate;
-    }
-
-    public function isEnabled(): bool
+    private ElasticApmInteractorInterface $interactor;
+    
+    public function __construct(ElasticApmInteractorInterface $defaultInteractor)
     {
-        if (!$this->enabled) {
-            return false;
-        }
-
-        // Check if current environment is enabled
-        $currentEnv = $_ENV['APP_ENV'] ?? 'dev';
-        if (!in_array($currentEnv, $this->enabledEnvironments)) {
-            return false;
-        }
-
-        // Apply sampling rate
-        if ($this->sampleRate < 1.0) {
-            return mt_rand() / mt_getrandmax() <= $this->sampleRate;
-        }
-
-        return true;
+        $this->interactor = $defaultInteractor;
     }
-
-    public function beginTransaction(string $name, string $type, ?float $timestamp = null): void
+    
+    /**
+     * Switch to a different interactor at runtime
+     */
+    public function setInteractor(ElasticApmInteractorInterface $interactor): void
     {
-        if ($this->isEnabled()) {
-            $this->delegate->beginTransaction($name, $type, $timestamp);
-        }
+        $this->interactor = $interactor;
     }
-
-    public function beginCurrentTransaction(string $name, string $type, ?float $timestamp = null): void
+    
+    public function startTransaction(string $name, string $type): Transaction
     {
-        if ($this->isEnabled()) {
-            $this->delegate->beginCurrentTransaction($name, $type, $timestamp);
-        }
+        return $this->interactor->startTransaction($name, $type);
     }
-
-    public function endCurrentTransaction(?string $result = null, ?string $outcome = null): void
+    
+    public function stopTransaction(?Transaction $transaction, ?int $result = null): void
     {
-        if ($this->isEnabled()) {
-            $this->delegate->endCurrentTransaction($result, $outcome);
-        }
+        $this->interactor->stopTransaction($transaction, $result);
     }
-
-    public function setTransactionContext(array $context): void
+    
+    public function startSpan(
+        string $name,
+        string $type,
+        ?string $subtype = null,
+        ?Transaction $transaction = null
+    ): Span {
+        return $this->interactor->startSpan($name, $type, $subtype, $transaction);
+    }
+    
+    public function stopSpan(Span $span): void
     {
-        if ($this->isEnabled()) {
-            $this->delegate->setTransactionContext($context);
-        }
+        $this->interactor->stopSpan($span);
     }
-
-    public function setTransactionLabels(array $labels): void
-    {
-        if ($this->isEnabled()) {
-            $this->delegate->setTransactionLabels($labels);
-        }
-    }
-
-    public function beginCurrentSpan(string $name, string $type, ?string $subType = null, ?string $action = null): void
-    {
-        if ($this->isEnabled()) {
-            $this->delegate->beginCurrentSpan($name, $type, $subType, $action);
-        }
-    }
-
-    public function endCurrentSpan(): void
-    {
-        if ($this->isEnabled()) {
-            $this->delegate->endCurrentSpan();
-        }
-    }
-
-    public function captureCurrentSpan(string $name, string $type, callable $callback, ?string $subType = null, ?string $action = null): mixed
-    {
-        if ($this->isEnabled()) {
-            return $this->delegate->captureCurrentSpan($name, $type, $callback, $subType, $action);
-        }
-        return $callback();
-    }
-
+    
     public function captureException(\Throwable $exception): void
     {
-        if ($this->isEnabled()) {
-            $this->delegate->captureException($exception);
-        }
+        $this->interactor->captureException($exception);
     }
-
-    public function captureError(string $type, string $message, ?string $file = null, ?int $line = null): void
+    
+    public function captureError(string $message, array $context = []): void
     {
-        if ($this->isEnabled()) {
-            $this->delegate->captureError($type, $message, $file, $line);
-        }
+        $this->interactor->captureError($message, $context);
     }
-
-    public function setUserContext(?string $id = null, ?string $email = null, ?string $username = null): void
+    
+    public function setTransactionCustomData(Transaction $transaction, array $data): void
     {
-        if ($this->isEnabled()) {
-            $this->delegate->setUserContext($id, $email, $username);
-        }
+        $this->interactor->setTransactionCustomData($transaction, $data);
     }
-
+    
+    public function setSpanCustomData(Span $span, array $data): void
+    {
+        $this->interactor->setSpanCustomData($span, $data);
+    }
+    
+    public function setUserContext(array $context): void
+    {
+        $this->interactor->setUserContext($context);
+    }
+    
     public function setCustomContext(array $context): void
     {
-        if ($this->isEnabled()) {
-            $this->delegate->setCustomContext($context);
-        }
+        $this->interactor->setCustomContext($context);
     }
-
-    public function addTransactionLabel(string $key, $value): void
+    
+    public function setLabels(array $labels): void
     {
-        if ($this->isEnabled()) {
-            $this->delegate->addTransactionLabel($key, $value);
-        }
+        $this->interactor->setLabels($labels);
     }
-
-    public function getCurrentTraceId(): ?string
+    
+    public function flush(): void
     {
-        if ($this->isEnabled()) {
-            return $this->delegate->getCurrentTraceId();
-        }
-        return null;
+        $this->interactor->flush();
     }
-
-    public function getCurrentTransactionId(): ?string
+    
+    public function isEnabled(): bool
     {
-        if ($this->isEnabled()) {
-            return $this->delegate->getCurrentTransactionId();
-        }
-        return null;
+        return $this->interactor->isEnabled();
     }
-
-    public function startRequestTransaction(Request $request): void
+    
+    public function isRecording(): bool
     {
-        if ($this->isEnabled()) {
-            $this->delegate->startRequestTransaction($request);
-        }
+        return $this->interactor->isRecording();
     }
-
-    public function endRequestTransaction(Response $response): void
+    
+    public function getCurrentTransaction(): ?Transaction
     {
-        if ($this->isEnabled()) {
-            $this->delegate->endRequestTransaction($response);
-        }
+        return $this->interactor->getCurrentTransaction();
+    }
+    
+    public function getTraceContext(): array
+    {
+        return $this->interactor->getTraceContext();
+    }
+    
+    public function captureCurrentSpan(
+        string $name,
+        string $type,
+        callable $callback,
+        array $context = []
+    ): mixed {
+        return $this->interactor->captureCurrentSpan($name, $type, $callback, $context);
     }
 }

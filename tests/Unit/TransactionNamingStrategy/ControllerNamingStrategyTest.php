@@ -23,7 +23,7 @@ class ControllerNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertEquals('App\Controller\HomeController::index', $name);
+        $this->assertEquals('GET HomeController::index', $name);
     }
 
     public function testGetTransactionNameWithCallableArrayController(): void
@@ -34,7 +34,7 @@ class ControllerNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertEquals('App\Controller\HomeController::index', $name);
+        $this->assertEquals('GET HomeController::index', $name);
     }
 
     public function testGetTransactionNameWithObjectController(): void
@@ -45,7 +45,7 @@ class ControllerNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertEquals('stdClass::index', $name);
+        $this->assertEquals('GET stdClass::index', $name);
     }
 
     public function testGetTransactionNameWithClosure(): void
@@ -55,7 +55,7 @@ class ControllerNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertEquals('Closure', $name);
+        $this->assertEquals('GET Closure', $name);
     }
 
     public function testGetTransactionNameWithInvokableObject(): void
@@ -68,7 +68,7 @@ class ControllerNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertStringContains('class@anonymous', $name);
+        $this->assertEquals('GET class@anonymous', $name);
     }
 
     public function testGetTransactionNameWithoutController(): void
@@ -78,7 +78,7 @@ class ControllerNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertEquals('/test-uri', $name);
+        $this->assertEquals('GET unknown', $name);
     }
 
     public function testGetTransactionNameWithEmptyUri(): void
@@ -87,6 +87,6 @@ class ControllerNamingStrategyTest extends TestCase
 
         $name = $this->strategy->getTransactionName($request);
 
-        $this->assertEquals('/', $name);
+        $this->assertEquals('GET unknown', $name);
     }
 }

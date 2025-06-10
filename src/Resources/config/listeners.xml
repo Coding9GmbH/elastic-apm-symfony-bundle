@@ -8,6 +8,7 @@
         <!-- Request Listener -->
         <service id="elastic_apm.listener.request" class="ElasticApmBundle\Listener\RequestListener">
             <argument type="service" id="elastic_apm.interactor"/>
+            <argument type="service" id="elastic_apm.naming_strategy"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 

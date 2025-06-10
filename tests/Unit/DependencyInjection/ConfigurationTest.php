@@ -26,12 +26,14 @@ class ConfigurationTest extends TestCase
 
         $this->assertArrayHasKey('enabled', $config);
         $this->assertTrue($config['enabled']);
-        $this->assertArrayHasKey('service_name', $config);
-        $this->assertArrayHasKey('server_url', $config);
-        $this->assertArrayHasKey('secret_token', $config);
-        $this->assertArrayHasKey('environment', $config);
-        $this->assertArrayHasKey('transaction_naming_strategy', $config);
-        $this->assertEquals('route', $config['transaction_naming_strategy']);
+        $this->assertArrayHasKey('service', $config);
+        $this->assertArrayHasKey('name', $config['service']);
+        $this->assertArrayHasKey('server', $config);
+        $this->assertArrayHasKey('url', $config['server']);
+        $this->assertArrayHasKey('secret_token', $config['server']);
+        $this->assertArrayHasKey('transactions', $config);
+        $this->assertArrayHasKey('naming_strategy', $config['transactions']);
+        $this->assertEquals('route', $config['transactions']['naming_strategy']);
     }
 
     public function testCustomConfiguration(): void
@@ -39,16 +41,21 @@ class ConfigurationTest extends TestCase
         $customConfig = [
             'elastic_apm' => [
                 'enabled' => false,
-                'service_name' => 'my-service',
-                'server_url' => 'http://apm-server:8200',
-                'secret_token' => 'secret123',
-                'environment' => 'production',
-                'transaction_naming_strategy' => 'controller',
+                'service' => [
+                    'name' => 'my-service',
+                    'environment' => 'production'
+                ],
+                'server' => [
+                    'url' => 'http://apm-server:8200',
+                    'secret_token' => 'secret123'
+                ],
+                'transactions' => [
+                    'naming_strategy' => 'controller'
+                ],
                 'rum' => [
                     'enabled' => true,
                     'server_url' => 'http://rum-server:8200',
-                    'service_name' => 'my-frontend',
-                    'environment' => 'production'
+                    'service_name' => 'my-frontend'
                 ]
             ]
         ];
@@ -56,11 +63,11 @@ class ConfigurationTest extends TestCase
         $config = $this->processor->processConfiguration($this->configuration, $customConfig);
 
         $this->assertFalse($config['enabled']);
-        $this->assertEquals('my-service', $config['service_name']);
-        $this->assertEquals('http://apm-server:8200', $config['server_url']);
-        $this->assertEquals('secret123', $config['secret_token']);
-        $this->assertEquals('production', $config['environment']);
-        $this->assertEquals('controller', $config['transaction_naming_strategy']);
+        $this->assertEquals('my-service', $config['service']['name']);
+        $this->assertEquals('http://apm-server:8200', $config['server']['url']);
+        $this->assertEquals('secret123', $config['server']['secret_token']);
+        $this->assertEquals('production', $config['service']['environment']);
+        $this->assertEquals('controller', $config['transactions']['naming_strategy']);
         $this->assertTrue($config['rum']['enabled']);
         $this->assertEquals('http://rum-server:8200', $config['rum']['server_url']);
     }
@@ -71,7 +78,9 @@ class ConfigurationTest extends TestCase
 
         $invalidConfig = [
             'elastic_apm' => [
-                'transaction_naming_strategy' => 'invalid_strategy'
+                'transactions' => [
+                    'naming_strategy' => 'invalid_strategy'
+                ]
             ]
         ];
 

@@ -4,6 +4,7 @@ namespace ElasticApmBundle\Tests\Unit\Listener;
 
 use ElasticApmBundle\Listener\ExceptionListener;
 use ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
+use ElasticApmBundle\Tests\SymfonyCompat;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,7 +33,7 @@ class ExceptionListenerTest extends TestCase
     {
         $exception = new \Exception('Test exception');
         $request = new Request();
-        $event = new ExceptionEvent($this->kernel, $request, HttpKernelInterface::MASTER_REQUEST, $exception);
+        $event = new ExceptionEvent($this->kernel, $request, SymfonyCompat::getMainRequestType(), $exception);
 
         $this->interactor->expects($this->once())
             ->method('captureException')
@@ -45,7 +46,7 @@ class ExceptionListenerTest extends TestCase
     {
         $throwable = new \Error('Test error');
         $request = new Request();
-        $event = new ExceptionEvent($this->kernel, $request, HttpKernelInterface::MASTER_REQUEST, $throwable);
+        $event = new ExceptionEvent($this->kernel, $request, SymfonyCompat::getMainRequestType(), $throwable);
 
         $this->interactor->expects($this->once())
             ->method('captureException')

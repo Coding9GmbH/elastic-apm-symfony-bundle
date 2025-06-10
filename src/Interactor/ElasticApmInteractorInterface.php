@@ -2,98 +2,103 @@
 
 namespace ElasticApmBundle\Interactor;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use ElasticApmBundle\Model\Transaction;
+use ElasticApmBundle\Model\Span;
 
 interface ElasticApmInteractorInterface
 {
     /**
-     * Begin a new transaction
+     * Start a new transaction
      */
-    public function beginTransaction(string $name, string $type, ?float $timestamp = null): void;
-
+    public function startTransaction(string $name, string $type): Transaction;
+    
     /**
-     * Begin a new transaction for the current request
+     * Stop a transaction
      */
-    public function beginCurrentTransaction(string $name, string $type, ?float $timestamp = null): void;
-
+    public function stopTransaction(?Transaction $transaction, ?int $result = null): void;
+    
     /**
-     * End the current transaction
+     * Start a new span
      */
-    public function endCurrentTransaction(?string $result = null, ?string $outcome = null): void;
-
+    public function startSpan(
+        string $name,
+        string $type,
+        ?string $subtype = null,
+        ?Transaction $transaction = null
+    ): Span;
+    
     /**
-     * Set transaction context
+     * Stop a span
      */
-    public function setTransactionContext(array $context): void;
-
-    /**
-     * Set transaction labels
-     */
-    public function setTransactionLabels(array $labels): void;
-
-    /**
-     * Begin a new span
-     */
-    public function beginCurrentSpan(string $name, string $type, ?string $subType = null, ?string $action = null): void;
-
-    /**
-     * End the current span
-     */
-    public function endCurrentSpan(): void;
-
-    /**
-     * Capture a span with a callback
-     */
-    public function captureCurrentSpan(string $name, string $type, callable $callback, ?string $subType = null, ?string $action = null): mixed;
-
+    public function stopSpan(Span $span): void;
+    
     /**
      * Capture an exception
      */
     public function captureException(\Throwable $exception): void;
-
+    
     /**
-     * Capture an error
+     * Capture a custom error
      */
-    public function captureError(string $type, string $message, ?string $file = null, ?int $line = null): void;
-
+    public function captureError(string $message, array $context = []): void;
+    
+    /**
+     * Set custom data on a transaction
+     */
+    public function setTransactionCustomData(Transaction $transaction, array $data): void;
+    
+    /**
+     * Set custom data on a span
+     */
+    public function setSpanCustomData(Span $span, array $data): void;
+    
     /**
      * Set user context
      */
-    public function setUserContext(?string $id = null, ?string $email = null, ?string $username = null): void;
-
+    public function setUserContext(array $context): void;
+    
     /**
      * Set custom context
      */
     public function setCustomContext(array $context): void;
-
+    
     /**
-     * Add transaction label
+     * Set labels
      */
-    public function addTransactionLabel(string $key, $value): void;
-
+    public function setLabels(array $labels): void;
+    
     /**
-     * Get the current trace ID
+     * Flush all queued data
      */
-    public function getCurrentTraceId(): ?string;
-
-    /**
-     * Get the current transaction ID
-     */
-    public function getCurrentTransactionId(): ?string;
-
+    public function flush(): void;
+    
     /**
      * Check if APM is enabled
      */
     public function isEnabled(): bool;
-
+    
     /**
-     * Start a transaction from HTTP request
+     * Check if the current transaction is being recorded
      */
-    public function startRequestTransaction(Request $request): void;
-
+    public function isRecording(): bool;
+    
     /**
-     * End a transaction with HTTP response
+     * Get the current transaction
      */
-    public function endRequestTransaction(Response $response): void;
+    public function getCurrentTransaction(): ?Transaction;
+    
+    /**
+     * Get trace context for distributed tracing
+     */
+    public function getTraceContext(): array;
+    
+    /**
+     * Capture a span with a callback
+     */
+    public function captureCurrentSpan(
+        string $name,
+        string $type,
+        callable $callback,
+        array $context = []
+    ): mixed;
 }
