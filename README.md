@@ -18,7 +18,7 @@ A comprehensive Symfony bundle for Elastic APM integration with support for dist
 Install the bundle using Composer:
 
 ```bash
-composer require yourvendor/elastic-apm-symfony-bundle
+composer require coding9/elastic-apm-symfony-bundle
 ```
 
 If you're using Symfony Flex, the bundle will be automatically configured. Otherwise, register it in `config/bundles.php`:

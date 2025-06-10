@@ -1,5 +1,5 @@
 {
-    "name": "yourvendor/elastic-apm-symfony-bundle",
+    "name": "coding9/elastic-apm-symfony-bundle",
     "type": "symfony-bundle",
     "description": "Symfony bundle for Elastic APM integration with comprehensive support for distributed tracing, message queue tracking, and OpenTracing compatibility",
     "keywords": [
@@ -19,8 +19,13 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Your Name",
-            "email": "your.email@example.com"
+            "name": "Felix Astner",
+            "email": "felix@coding9.de",
+            "role": "Developer"
+        },
+        {
+            "name": "Coding 9 GmbH",
+            "homepage": "https://coding9.de"
         }
     ],
     "require": {
