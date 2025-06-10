@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <!-- Configuration service -->
+        <service id="elastic_apm.config" class="stdClass">
+            <factory class="ElasticApmBundle\DependencyInjection\ConfigFactory" method="create"/>
+            <argument type="collection">
+                <argument key="enabled">%elastic_apm.enabled%</argument>
+                <argument key="server" type="collection">
+                    <argument key="url">%elastic_apm.server.url%</argument>
+                    <argument key="secret_token">%elastic_apm.server.secret_token%</argument>
+                    <argument key="api_key">%elastic_apm.server.api_key%</argument>
+                </argument>
+                <argument key="service" type="collection">
+                    <argument key="name">%elastic_apm.service.name%</argument>
+                    <argument key="version">%elastic_apm.service.version%</argument>
+                    <argument key="environment">%elastic_apm.service.environment%</argument>
+                </argument>
+                <argument key="transactions" type="collection">
+                    <argument key="sample_rate">%elastic_apm.transactions.sample_rate%</argument>
+                    <argument key="max_spans">%elastic_apm.transactions.max_spans%</argument>
+                </argument>
+            </argument>
+        </service>
+
+        <!-- Twig Extension -->
+        <service id="elastic_apm.twig_extension" class="ElasticApmBundle\Twig\ElasticApmExtension">
+            <argument type="service" id="elastic_apm.interactor"/>
+            <argument type="collection">
+                <argument key="rum" type="collection">
+                    <argument key="enabled">%elastic_apm.rum.enabled%</argument>
+                    <argument key="service_name">%elastic_apm.rum.service_name%</argument>
+                    <argument key="server_url">%elastic_apm.rum.server_url%</argument>
+                </argument>
+                <argument key="service" type="collection">
+                    <argument key="version">%elastic_apm.service.version%</argument>
+                    <argument key="environment">%elastic_apm.service.environment%</argument>
+                </argument>
+            </argument>
+            <tag name="twig.extension"/>
+        </service>
+
+        <!-- Secure RUM Extension (Alternative to API endpoint) -->
+        <service id="elastic_apm.secure_rum_extension" class="ElasticApmBundle\Twig\SecureRumExtension">
+            <argument type="collection">
+                <argument key="enabled">%elastic_apm.rum.enabled%</argument>
+                <argument key="service_name">%elastic_apm.rum.service_name%</argument>
+                <argument key="server_url">%elastic_apm.rum.server_url%</argument>
+            </argument>
+            <tag name="twig.extension"/>
+        </service>
+
+        <!-- APM Controller for RUM config endpoint -->
+        <service id="elastic_apm.controller.apm" class="ElasticApmBundle\Controller\ApmController">
+            <argument type="collection">
+                <argument key="rum" type="collection">
+                    <argument key="enabled">%elastic_apm.rum.enabled%</argument>
+                    <argument key="service_name">%elastic_apm.rum.service_name%</argument>
+                    <argument key="server_url">%elastic_apm.rum.server_url%</argument>
+                </argument>
+                <argument key="service" type="collection">
+                    <argument key="version">%elastic_apm.service.version%</argument>
+                    <argument key="environment">%elastic_apm.service.environment%</argument>
+                </argument>
+            </argument>
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <!-- Helper trait for APM tracing -->
+        <service id="elastic_apm.tracing_trait" class="ElasticApmBundle\Helper\ApmTracingTrait" abstract="true">
+            <call method="setApmInteractor">
+                <argument type="service" id="elastic_apm.interactor"/>
+            </call>
+        </service>
+    </services>
+</container>

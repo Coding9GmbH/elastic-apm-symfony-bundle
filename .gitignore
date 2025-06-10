@@ -1,0 +1,14 @@
+/vendor/
+/composer.lock
+/.phpunit.result.cache
+/phpunit.xml
+/.php-cs-fixer.cache
+/.phpstan/
+/build/
+/coverage/
+/.idea/
+/.vscode/
+*.log
+.DS_Store
+.env.local
+.env.*.local

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <!-- ElasticApm Interactor -->
+        <service id="elastic_apm.interactor.elastic_apm" class="ElasticApmBundle\Interactor\ElasticApmInteractor">
+            <argument type="collection">
+                <argument key="enabled">%elastic_apm.enabled%</argument>
+                <argument key="server" type="collection">
+                    <argument key="url">%elastic_apm.server.url%</argument>
+                    <argument key="secret_token">%elastic_apm.server.secret_token%</argument>
+                    <argument key="api_key">%elastic_apm.server.api_key%</argument>
+                </argument>
+                <argument key="service" type="collection">
+                    <argument key="name">%elastic_apm.service.name%</argument>
+                    <argument key="version">%elastic_apm.service.version%</argument>
+                    <argument key="environment">%elastic_apm.service.environment%</argument>
+                </argument>
+                <argument key="transactions" type="collection">
+                    <argument key="sample_rate">%elastic_apm.transactions.sample_rate%</argument>
+                    <argument key="max_spans">%elastic_apm.transactions.max_spans%</argument>
+                </argument>
+            </argument>
+            <argument type="service" id="elastic_apm.naming_strategy"/>
+            <argument type="service" id="logger" on-invalid="null"/>
+        </service>
+
+        <!-- Blackhole Interactor -->
+        <service id="elastic_apm.interactor.blackhole" class="ElasticApmBundle\Interactor\BlackholeInteractor"/>
+
+        <!-- OpenTracing Interactor -->
+        <service id="elastic_apm.interactor.opentracing" class="ElasticApmBundle\Interactor\OpenTracingInteractor">
+            <argument type="collection">
+                <argument key="enabled">%elastic_apm.enabled%</argument>
+                <argument key="server" type="collection">
+                    <argument key="url">%elastic_apm.opentracing.jaeger_endpoint%</argument>
+                    <argument key="secret_token">%elastic_apm.server.secret_token%</argument>
+                    <argument key="api_key">%elastic_apm.server.api_key%</argument>
+                </argument>
+                <argument key="service" type="collection">
+                    <argument key="name">%elastic_apm.service.name%</argument>
+                    <argument key="version">%elastic_apm.service.version%</argument>
+                    <argument key="environment">%elastic_apm.service.environment%</argument>
+                </argument>
+                <argument key="opentracing" type="collection">
+                    <argument key="format">%elastic_apm.opentracing.format%</argument>
+                    <argument key="b3_propagation">%elastic_apm.opentracing.b3_propagation%</argument>
+                    <argument key="w3c_propagation">%elastic_apm.opentracing.w3c_propagation%</argument>
+                    <argument key="jaeger_propagation">%elastic_apm.opentracing.jaeger_propagation%</argument>
+                </argument>
+            </argument>
+            <argument type="service" id="elastic_apm.naming_strategy"/>
+            <argument type="service" id="logger" on-invalid="null"/>
+        </service>
+
+        <!-- Adaptive Interactor -->
+        <service id="elastic_apm.interactor.adaptive" class="ElasticApmBundle\Interactor\AdaptiveInteractor">
+            <argument type="service" id="elastic_apm.interactor.elastic_apm"/>
+            <argument>%elastic_apm.enabled%</argument>
+            <argument type="collection">
+                <argument>prod</argument>
+                <argument>staging</argument>
+            </argument>
+            <argument>%elastic_apm.transactions.sample_rate%</argument>
+        </service>
+
+        <!-- Default interactor alias will be set by Extension based on configuration -->
+    </services>
+</container>
