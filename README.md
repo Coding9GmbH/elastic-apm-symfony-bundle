@@ -11,6 +11,7 @@ A comprehensive Symfony bundle for Elastic APM integration with support for dist
 - 🚀 **Zero-Configuration**: Automatic tracking for HTTP requests, console commands, and messages
 - 🔒 **Security First**: Secure by default with opt-in RUM support
 - 📊 **Performance Monitoring**: Memory tracking, error capturing, and detailed spans
+- ⚡ **Production Optimized**: gzip compression, circuit breaker, sampling, deferred sending
 
 ## Installation
 

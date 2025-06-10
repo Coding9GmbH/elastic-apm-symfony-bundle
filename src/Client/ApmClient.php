@@ -14,6 +14,8 @@ class ApmClient
     private LoggerInterface $logger;
     private array $queue = [];
     private ?array $metadata = null;
+    private static ?int $lastFailureTime = null;
+    private static ?int $consecutiveFailures = 0;
     
     public function __construct(array $config, ?LoggerInterface $logger = null)
     {
@@ -24,27 +26,27 @@ class ApmClient
     
     public function sendTransaction(Transaction $transaction): void
     {
-        if (!$this->isEnabled()) {
+        if (!$this->isEnabled() || !$this->shouldSample()) {
             return;
         }
         
         $this->queue[] = ['transaction' => $transaction->toArray()];
         
         if (count($this->queue) >= ($this->config['queue_size'] ?? 100)) {
-            $this->flush();
+            $this->flushAsync();
         }
     }
     
     public function sendSpan(Span $span): void
     {
-        if (!$this->isEnabled()) {
+        if (!$this->isEnabled() || !$this->shouldSample()) {
             return;
         }
         
         $this->queue[] = ['span' => $span->toArray()];
         
         if (count($this->queue) >= ($this->config['queue_size'] ?? 100)) {
-            $this->flush();
+            $this->flushAsync();
         }
     }
     
@@ -62,13 +64,52 @@ class ApmClient
     
     public function flush(): void
     {
-        if (empty($this->queue) || !$this->isEnabled()) {
+        if (empty($this->queue) || !$this->isEnabled() || $this->isCircuitBreakerOpen()) {
             return;
         }
         
         $payload = $this->buildPayload();
         $this->sendToApmServer($payload);
         $this->queue = [];
+    }
+    
+    private function isCircuitBreakerOpen(): bool
+    {
+        // Simple circuit breaker: stop trying for 60s after 3 consecutive failures
+        if (self::$consecutiveFailures >= 3) {
+            $backoffTime = 60; // seconds
+            if (time() - self::$lastFailureTime < $backoffTime) {
+                $this->logger->debug('APM circuit breaker open - skipping send');
+                return true;
+            } else {
+                // Reset after backoff period
+                self::$consecutiveFailures = 0;
+            }
+        }
+        return false;
+    }
+    
+    private function flushAsync(): void
+    {
+        // For high-performance apps, defer sending to shutdown
+        if ($this->config['defer_to_shutdown'] ?? false) {
+            // Register shutdown function to send data after response is sent
+            if (!function_exists('fastcgi_finish_request')) {
+                // For non-FPM environments, just send normally
+                $this->flush();
+            } else {
+                // Data will be sent in shutdown handler (after response sent)
+                register_shutdown_function([$this, 'flush']);
+            }
+        } else {
+            $this->flush();
+        }
+    }
+    
+    private function shouldSample(): bool
+    {
+        $sampleRate = $this->config['transactions']['sample_rate'] ?? 1.0;
+        return mt_rand() / mt_getrandmax() <= $sampleRate;
     }
     
     private function buildPayload(): string
@@ -101,11 +142,14 @@ class ApmClient
         $ch = curl_init($url);
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $payload,
-            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_POSTFIELDS => gzencode($payload), // Add compression
+            CURLOPT_HTTPHEADER => array_merge($headers, ['Content-Encoding: gzip']),
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => $this->config['server']['timeout'] ?? 10,
+            CURLOPT_TIMEOUT => 2, // Reduce timeout to 2s max
+            CURLOPT_CONNECTTIMEOUT => 1, // 1s connection timeout
             CURLOPT_SSL_VERIFYPEER => $this->config['server']['verify_server_cert'] ?? true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_2_0, // Use HTTP/2
+            CURLOPT_TCP_KEEPALIVE => 1, // Enable keep-alive
         ]);
         
         $response = curl_exec($ch);
@@ -115,11 +159,26 @@ class ApmClient
         
         if ($error) {
             $this->logger->error('Failed to send APM data: ' . $error);
+            $this->recordFailure();
         } elseif ($httpCode >= 400) {
             $this->logger->error('APM server returned error: HTTP ' . $httpCode . ' - ' . $response);
+            $this->recordFailure();
         } else {
             $this->logger->debug('Successfully sent APM data');
+            $this->recordSuccess();
         }
+    }
+    
+    private function recordFailure(): void
+    {
+        self::$consecutiveFailures++;
+        self::$lastFailureTime = time();
+    }
+    
+    private function recordSuccess(): void
+    {
+        self::$consecutiveFailures = 0;
+        self::$lastFailureTime = null;
     }
     
     private function initializeMetadata(): void

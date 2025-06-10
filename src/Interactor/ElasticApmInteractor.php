@@ -179,9 +179,8 @@ class ElasticApmInteractor implements ElasticApmInteractorInterface
             return false;
         }
         
-        // Check sampling rate
-        $sampleRate = $this->config['transactions']['sample_rate'] ?? 1.0;
-        return mt_rand() / mt_getrandmax() <= $sampleRate;
+        // Sampling is now handled by the client
+        return true;
     }
     
     public function getCurrentTransaction(): ?Transaction
