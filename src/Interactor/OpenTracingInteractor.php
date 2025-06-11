@@ -286,7 +286,7 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
         ]);
     }
 
-    public function captureError(string $type, string $message, ?string $file = null, ?int $line = null): void
+    public function captureError(string $message, array $context = []): void
     {
         if (!$this->enabled) {
             return;
@@ -302,7 +302,7 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
             'duration' => 0,
             'tags' => [
                 'error' => true,
-                'error.kind' => $type,
+                'error.kind' => $context['type'] ?? 'error',
                 'component' => 'error',
                 'span.kind' => 'internal',
             ],
@@ -312,15 +312,16 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
                     'level' => 'error',
                     'message' => $message,
                     'event' => 'error',
-                    'file' => $file,
-                    'line' => $line,
+                    'file' => $context['file'] ?? null,
+                    'line' => $context['line'] ?? null,
+                    'context' => $context,
                 ],
             ],
         ];
 
         $this->sendSpan($errorSpan);
 
-        $this->logger?->debug("[OpenTracing] Captured error: {$type} - {$message}");
+        $this->logger?->debug("[OpenTracing] Captured error: {$message}", $context);
     }
 
     public function setUserContext(?string $id = null, ?string $email = null, ?string $username = null): void
