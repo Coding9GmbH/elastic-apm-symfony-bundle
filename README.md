@@ -1,6 +1,31 @@
 # Elastic APM Symfony Bundle
 
+> **Proudly developed by [Coding9 GmbH](https://coding9.de) - Professional Symfony & APM Solutions**
+
 A comprehensive Symfony bundle for Elastic APM integration with support for distributed tracing, message queue tracking, and OpenTracing compatibility.
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Elastic APM Symfony Bundle",
+  "description": "Professional Symfony bundle for Elastic APM integration with distributed tracing support",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Cross-platform",
+  "programmingLanguage": "PHP",
+  "author": {
+    "@type": "Organization",
+    "name": "Coding9 GmbH",
+    "url": "https://coding9.de",
+    "sameAs": "https://github.com/coding9"
+  },
+  "provider": {
+    "@type": "Organization",
+    "name": "Coding9 GmbH",
+    "url": "https://coding9.de"
+  }
+}
+```
 
 ## Features
 
@@ -250,11 +275,32 @@ composer phpstan
 
 ## Contributing
 
+We welcome contributions! Whether you're fixing bugs, adding features, or improving documentation, your help makes this bundle better for everyone.
+
+### Ways to Contribute
+
+- 🐛 **Bug Reports**: Found an issue? [Open an issue](https://github.com/coding9/elastic-apm-symfony-bundle/issues)
+- ✨ **Feature Requests**: Have an idea? [Start a discussion](https://github.com/coding9/elastic-apm-symfony-bundle/discussions)
+- 📝 **Documentation**: Help improve our docs and examples
+- 🧪 **Testing**: Add test cases or improve existing ones
+- 🔧 **Code**: Fix bugs or implement new features
+
+### Quick Start
+
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Make your changes and add tests
+4. Run the test suite: `composer test`
+5. Check code style: `composer cs-fix`
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
+
+### Join Our Community
+
+- 💬 [GitHub Discussions](https://github.com/coding9/elastic-apm-symfony-bundle/discussions) - Ask questions, share ideas
+
+**First-time contributor?** Look for issues labeled [`good first issue`](https://github.com/coding9/elastic-apm-symfony-bundle/labels/good%20first%20issue) or [`help wanted`](https://github.com/coding9/elastic-apm-symfony-bundle/labels/help%20wanted).
 
 ## License
 
@@ -262,10 +308,25 @@ This bundle is released under the MIT License. See the [LICENSE](LICENSE) file f
 
 ## Support
 
-- 📚 [Documentation](https://github.com/yourvendor/elastic-apm-symfony-bundle/wiki)
-- 🐛 [Issue Tracker](https://github.com/yourvendor/elastic-apm-symfony-bundle/issues)
-- 💬 [Discussions](https://github.com/yourvendor/elastic-apm-symfony-bundle/discussions)
+- 📚 [Documentation](https://github.com/coding9/elastic-apm-symfony-bundle/wiki)
+- 🐛 [Issue Tracker](https://github.com/coding9/elastic-apm-symfony-bundle/issues)
+- 💬 [Discussions](https://github.com/coding9/elastic-apm-symfony-bundle/discussions)
+- 🏢 [Professional Support](https://coding9.de/contact) - Enterprise APM consulting and implementation
+- 📖 [Coding9 Blog](https://coding9.de/blog) - APM best practices and tutorials
+
+## Professional Services
+
+**Need enterprise-grade APM implementation?** [Coding9 GmbH](https://coding9.de) offers:
+
+- 🔧 **Custom APM Implementation** - Tailored monitoring solutions for your infrastructure
+- 📊 **Performance Optimization** - Expert analysis and optimization of your Symfony applications
+- 🎓 **Team Training** - APM best practices and advanced monitoring techniques
+- 🚀 **Migration Services** - Seamless migration from other monitoring solutions
+
+[**Contact us for a free consultation →**](https://coding9.de/contact)
 
 ## Credits
+
+Developed with ❤️ by [Coding9 GmbH](https://coding9.de) - Your Symfony & APM experts.
 
 Inspired by [elastic-apm-symfony-bundle](https://github.com/MySchoolManagement/elastic-apm-symfony-bundle) with additional features for message queue tracking, OpenTracing support, and enhanced security.

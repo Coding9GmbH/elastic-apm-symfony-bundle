@@ -14,7 +14,28 @@
         "jaeger",
         "zipkin",
         "messenger",
-        "queue"
+        "queue",
+        "coding9",
+        "german",
+        "enterprise",
+        "professional"
+    ],
+    "homepage": "https://coding9.de/open-source/elastic-apm-symfony-bundle",
+    "support": {
+        "issues": "https://github.com/coding9/elastic-apm-symfony-bundle/issues",
+        "source": "https://github.com/coding9/elastic-apm-symfony-bundle",
+        "docs": "https://coding9.de/docs/elastic-apm-symfony-bundle",
+        "email": "support@coding9.de"
+    },
+    "funding": [
+        {
+            "type": "custom",
+            "url": "https://coding9.de/sponsorship"
+        },
+        {
+            "type": "other",
+            "url": "https://coding9.de/contact"
+        }
     ],
     "license": "MIT",
     "authors": [
