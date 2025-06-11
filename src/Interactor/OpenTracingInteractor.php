@@ -21,6 +21,8 @@
 
 namespace ElasticApmBundle\Interactor;
 
+use ElasticApmBundle\Model\Span;
+use ElasticApmBundle\Model\Transaction;
 use ElasticApmBundle\TransactionNamingStrategy\TransactionNamingStrategyInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareInterface;
@@ -38,8 +40,9 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
 
     private array $config;
     private bool $enabled;
-    private ?array $currentTransaction = null;
+    private ?Transaction $currentTransaction = null;
     private array $spanStack = [];
+    private array $openTracingData = [];
     private TransactionNamingStrategyInterface $namingStrategy;
 
     public function __construct(
@@ -58,17 +61,26 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
         return $this->enabled;
     }
 
-    public function beginTransaction(string $name, string $type, ?float $timestamp = null): void
+    public function isRecording(): bool
+    {
+        return $this->enabled && $this->currentTransaction !== null;
+    }
+
+    public function startTransaction(string $name, string $type): Transaction
     {
         if (!$this->enabled) {
-            return;
+            return new Transaction($name, $type);
         }
 
-        $this->currentTransaction = [
-            'trace_id' => $this->generateTraceId(),
-            'span_id' => $this->generateSpanId(),
+        $transaction = new Transaction($name, $type);
+        $this->currentTransaction = $transaction;
+        
+        // Store OpenTracing-specific data
+        $this->openTracingData[$transaction->getId()] = [
+            'trace_id' => $transaction->getTraceId(),
+            'span_id' => $transaction->getId(),
             'operation_name' => $name,
-            'start_time' => $timestamp ?? microtime(true),
+            'start_time' => microtime(true),
             'tags' => [
                 'component' => 'symfony',
                 'transaction.type' => $type,
@@ -82,99 +94,76 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
         ];
 
         $this->logger?->debug('[OpenTracing] Started transaction: ' . $name, [
-            'trace_id' => $this->currentTransaction['trace_id'],
-            'span_id' => $this->currentTransaction['span_id'],
+            'trace_id' => $transaction->getTraceId(),
+            'span_id' => $transaction->getId(),
         ]);
+
+        return $transaction;
     }
 
-    public function beginCurrentTransaction(string $name, string $type, ?float $timestamp = null): void
+    public function stopTransaction(?Transaction $transaction, ?int $result = null): void
     {
-        $this->beginTransaction($name, $type, $timestamp);
-    }
-
-    public function endCurrentTransaction(?string $result = null, ?string $outcome = null): void
-    {
-        if (!$this->enabled || !$this->currentTransaction) {
+        if (!$this->enabled || !$transaction) {
             return;
         }
 
-        $endTime = microtime(true);
-        $duration = ($endTime - $this->currentTransaction['start_time']) * 1000000; // microseconds
-
-        $this->currentTransaction['finish_time'] = $endTime;
-        $this->currentTransaction['duration'] = $duration;
-
-        // Add result tags
+        $transaction->stop();
+        
         if ($result !== null) {
-            $this->currentTransaction['tags']['transaction.result'] = $result;
-        }
-        if ($outcome !== null) {
-            $this->currentTransaction['tags']['transaction.outcome'] = $outcome;
+            $transaction->setResult((string)$result);
         }
 
-        // Send span data in OpenTracing format
-        $this->sendSpan($this->currentTransaction);
+        if (isset($this->openTracingData[$transaction->getId()])) {
+            $data = &$this->openTracingData[$transaction->getId()];
+            $endTime = microtime(true);
+            $duration = ($endTime - $data['start_time']) * 1000000; // microseconds
 
-        $this->logger?->debug('[OpenTracing] Ended transaction: ' . $this->currentTransaction['operation_name'], [
-            'trace_id' => $this->currentTransaction['trace_id'],
-            'duration_ms' => $duration / 1000,
-        ]);
+            $data['finish_time'] = $endTime;
+            $data['duration'] = $duration;
 
-        $this->currentTransaction = null;
-        $this->spanStack = [];
-    }
-
-    public function setTransactionContext(array $context): void
-    {
-        if (!$this->enabled || !$this->currentTransaction) {
-            return;
-        }
-
-        // Convert context to OpenTracing tags
-        foreach ($context as $key => $value) {
-            if (is_array($value)) {
-                foreach ($value as $subKey => $subValue) {
-                    $this->currentTransaction['tags']["{$key}.{$subKey}"] = $this->formatTagValue($subValue);
-                }
-            } else {
-                $this->currentTransaction['tags'][$key] = $this->formatTagValue($value);
+            // Add result tags
+            if ($result !== null) {
+                $data['tags']['transaction.result'] = (string)$result;
             }
+
+            // Send span data in OpenTracing format
+            $this->sendSpan($data);
+
+            $this->logger?->debug('[OpenTracing] Ended transaction: ' . $transaction->getName(), [
+                'trace_id' => $transaction->getTraceId(),
+                'duration_ms' => $duration / 1000,
+            ]);
+
+            unset($this->openTracingData[$transaction->getId()]);
+        }
+
+        if ($this->currentTransaction === $transaction) {
+            $this->currentTransaction = null;
+            $this->spanStack = [];
         }
     }
 
-    public function setTransactionLabels(array $labels): void
+    public function startSpan(string $name, string $type, ?string $subtype = null, ?Transaction $transaction = null): Span
     {
-        if (!$this->enabled || !$this->currentTransaction) {
-            return;
+        if (!$this->enabled) {
+            return new Span($name, $type, $transaction);
         }
 
-        foreach ($labels as $key => $value) {
-            $this->currentTransaction['tags'][$key] = $this->formatTagValue($value);
-        }
-    }
-
-    public function addTransactionLabel(string $key, $value): void
-    {
-        if (!$this->enabled || !$this->currentTransaction) {
-            return;
-        }
-
-        $this->currentTransaction['tags'][$key] = $this->formatTagValue($value);
-    }
-
-    public function beginCurrentSpan(string $name, string $type, ?string $subType = null, ?string $action = null): void
-    {
-        if (!$this->enabled || !$this->currentTransaction) {
-            return;
+        $transaction = $transaction ?? $this->currentTransaction;
+        $span = new Span($name, $type, $transaction);
+        
+        if ($subtype) {
+            $span->setSubtype($subtype);
         }
 
         $parentSpanId = !empty($this->spanStack) 
-            ? end($this->spanStack)['span_id'] 
-            : $this->currentTransaction['span_id'];
+            ? end($this->spanStack)->getId() 
+            : ($transaction ? $transaction->getId() : null);
 
-        $span = [
-            'trace_id' => $this->currentTransaction['trace_id'],
-            'span_id' => $this->generateSpanId(),
+        // Store OpenTracing-specific data
+        $this->openTracingData[$span->getId()] = [
+            'trace_id' => $transaction ? $transaction->getTraceId() : $this->generateTraceId(),
+            'span_id' => $span->getId(),
             'parent_span_id' => $parentSpanId,
             'operation_name' => $name,
             'start_time' => microtime(true),
@@ -185,52 +174,59 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
             'logs' => [],
         ];
 
-        if ($subType) {
-            $span['tags']['span.subtype'] = $subType;
-        }
-        if ($action) {
-            $span['tags']['span.action'] = $action;
+        if ($subtype) {
+            $this->openTracingData[$span->getId()]['tags']['span.subtype'] = $subtype;
         }
 
         $this->spanStack[] = $span;
+        
+        return $span;
     }
 
-    public function endCurrentSpan(): void
+    public function stopSpan(Span $span): void
     {
-        if (!$this->enabled || empty($this->spanStack)) {
+        if (!$this->enabled) {
             return;
         }
 
-        $span = array_pop($this->spanStack);
-        $endTime = microtime(true);
-        $duration = ($endTime - $span['start_time']) * 1000000; // microseconds
+        $span->stop();
 
-        $span['finish_time'] = $endTime;
-        $span['duration'] = $duration;
+        if (isset($this->openTracingData[$span->getId()])) {
+            $data = &$this->openTracingData[$span->getId()];
+            $endTime = microtime(true);
+            $duration = ($endTime - $data['start_time']) * 1000000; // microseconds
 
-        // Send span data
-        $this->sendSpan($span);
+            $data['finish_time'] = $endTime;
+            $data['duration'] = $duration;
+
+            // Send span data
+            $this->sendSpan($data);
+
+            unset($this->openTracingData[$span->getId()]);
+        }
+
+        // Remove from stack
+        $this->spanStack = array_filter($this->spanStack, fn($s) => $s !== $span);
     }
 
-    public function captureCurrentSpan(string $name, string $type, callable $callback, ?string $subType = null, ?string $action = null): mixed
+    public function captureCurrentSpan(string $name, string $type, callable $callback, array $context = []): mixed
     {
         if (!$this->enabled) {
             return $callback();
         }
 
-        $this->beginCurrentSpan($name, $type, $subType, $action);
+        $span = $this->startSpan($name, $type, $context['subtype'] ?? null);
         
         try {
             $result = $callback();
-            $this->endCurrentSpan();
+            $this->stopSpan($span);
             return $result;
         } catch (\Throwable $e) {
-            // Add error tags to current span
-            if (!empty($this->spanStack)) {
-                $currentSpan = &$this->spanStack[count($this->spanStack) - 1];
-                $currentSpan['tags']['error'] = true;
-                $currentSpan['tags']['error.kind'] = get_class($e);
-                $currentSpan['logs'][] = [
+            // Add error tags to span
+            if (isset($this->openTracingData[$span->getId()])) {
+                $this->openTracingData[$span->getId()]['tags']['error'] = true;
+                $this->openTracingData[$span->getId()]['tags']['error.kind'] = get_class($e);
+                $this->openTracingData[$span->getId()]['logs'][] = [
                     'timestamp' => microtime(true),
                     'level' => 'error',
                     'message' => $e->getMessage(),
@@ -238,9 +234,42 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
                 ];
             }
             
-            $this->endCurrentSpan();
+            $this->stopSpan($span);
             $this->captureException($e);
             throw $e;
+        }
+    }
+
+    public function beginTransaction(string $name, string $type, ?float $timestamp = null): void
+    {
+        $this->startTransaction($name, $type);
+    }
+
+    public function beginCurrentTransaction(string $name, string $type, ?float $timestamp = null): void
+    {
+        $this->beginTransaction($name, $type, $timestamp);
+    }
+
+    public function endCurrentTransaction(?string $result = null, ?string $outcome = null): void
+    {
+        if ($this->currentTransaction) {
+            $this->stopTransaction($this->currentTransaction, $result ? (int)$result : null);
+        }
+    }
+
+    public function beginCurrentSpan(string $name, string $type, ?string $subType = null, ?string $action = null): void
+    {
+        $span = $this->startSpan($name, $type, $subType);
+        if ($action && isset($this->openTracingData[$span->getId()])) {
+            $this->openTracingData[$span->getId()]['tags']['span.action'] = $action;
+        }
+    }
+
+    public function endCurrentSpan(): void
+    {
+        if (!empty($this->spanStack)) {
+            $span = array_pop($this->spanStack);
+            $this->stopSpan($span);
         }
     }
 
@@ -252,9 +281,9 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
 
         // Create error span
         $errorSpan = [
-            'trace_id' => $this->currentTransaction['trace_id'] ?? $this->generateTraceId(),
+            'trace_id' => $this->currentTransaction ? $this->currentTransaction->getTraceId() : $this->generateTraceId(),
             'span_id' => $this->generateSpanId(),
-            'parent_span_id' => $this->currentTransaction['span_id'] ?? null,
+            'parent_span_id' => $this->currentTransaction ? $this->currentTransaction->getId() : null,
             'operation_name' => 'error',
             'start_time' => microtime(true),
             'finish_time' => microtime(true),
@@ -293,9 +322,9 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
         }
 
         $errorSpan = [
-            'trace_id' => $this->currentTransaction['trace_id'] ?? $this->generateTraceId(),
+            'trace_id' => $this->currentTransaction ? $this->currentTransaction->getTraceId() : $this->generateTraceId(),
             'span_id' => $this->generateSpanId(),
-            'parent_span_id' => $this->currentTransaction['span_id'] ?? null,
+            'parent_span_id' => $this->currentTransaction ? $this->currentTransaction->getId() : null,
             'operation_name' => 'error',
             'start_time' => microtime(true),
             'finish_time' => microtime(true),
@@ -324,15 +353,105 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
         $this->logger?->debug("[OpenTracing] Captured error: {$message}", $context);
     }
 
-    public function setUserContext(?string $id = null, ?string $email = null, ?string $username = null): void
+    public function setTransactionContext(array $context): void
     {
         if (!$this->enabled || !$this->currentTransaction) {
             return;
         }
 
-        if ($id) $this->currentTransaction['tags']['user.id'] = $id;
-        if ($email) $this->currentTransaction['tags']['user.email'] = $email;
-        if ($username) $this->currentTransaction['tags']['user.username'] = $username;
+        $this->currentTransaction->setContext($context);
+
+        // Convert context to OpenTracing tags
+        if (isset($this->openTracingData[$this->currentTransaction->getId()])) {
+            foreach ($context as $key => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $subKey => $subValue) {
+                        $this->openTracingData[$this->currentTransaction->getId()]['tags']["{$key}.{$subKey}"] = $this->formatTagValue($subValue);
+                    }
+                } else {
+                    $this->openTracingData[$this->currentTransaction->getId()]['tags'][$key] = $this->formatTagValue($value);
+                }
+            }
+        }
+    }
+
+    public function setTransactionLabels(array $labels): void
+    {
+        if (!$this->enabled || !$this->currentTransaction) {
+            return;
+        }
+
+        $this->currentTransaction->setLabels($labels);
+
+        if (isset($this->openTracingData[$this->currentTransaction->getId()])) {
+            foreach ($labels as $key => $value) {
+                $this->openTracingData[$this->currentTransaction->getId()]['tags'][$key] = $this->formatTagValue($value);
+            }
+        }
+    }
+
+    public function addTransactionLabel(string $key, $value): void
+    {
+        if (!$this->enabled || !$this->currentTransaction) {
+            return;
+        }
+
+        $this->currentTransaction->addLabel($key, $value);
+
+        if (isset($this->openTracingData[$this->currentTransaction->getId()])) {
+            $this->openTracingData[$this->currentTransaction->getId()]['tags'][$key] = $this->formatTagValue($value);
+        }
+    }
+
+    public function setTransactionCustomData(Transaction $transaction, array $data): void
+    {
+        if (!$this->enabled) {
+            return;
+        }
+
+        $transaction->setCustomContext($data);
+
+        if (isset($this->openTracingData[$transaction->getId()])) {
+            foreach ($data as $key => $value) {
+                $this->openTracingData[$transaction->getId()]['tags']["custom.{$key}"] = $this->formatTagValue($value);
+            }
+        }
+    }
+
+    public function setSpanCustomData(Span $span, array $data): void
+    {
+        if (!$this->enabled) {
+            return;
+        }
+
+        $span->setContext($data);
+
+        if (isset($this->openTracingData[$span->getId()])) {
+            foreach ($data as $key => $value) {
+                $this->openTracingData[$span->getId()]['tags']["custom.{$key}"] = $this->formatTagValue($value);
+            }
+        }
+    }
+
+    public function setUserContext(array $context): void
+    {
+        if (!$this->enabled || !$this->currentTransaction) {
+            return;
+        }
+
+        $this->currentTransaction->setUserContext($context);
+
+        if (isset($this->openTracingData[$this->currentTransaction->getId()])) {
+            if (isset($context['id'])) {
+                $this->openTracingData[$this->currentTransaction->getId()]['tags']['user.id'] = $context['id'];
+            }
+            if (isset($context['email'])) {
+                $this->openTracingData[$this->currentTransaction->getId()]['tags']['user.email'] = $context['email'];
+            }
+            if (isset($context['username'])) {
+                $this->openTracingData[$this->currentTransaction->getId()]['tags']['user.username'] = $context['username'];
+            }
+        }
     }
 
     public function setCustomContext(array $context): void
@@ -341,19 +460,46 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
             return;
         }
 
-        foreach ($context as $key => $value) {
-            $this->currentTransaction['tags']["custom.{$key}"] = $this->formatTagValue($value);
+        $this->currentTransaction->setCustomContext($context);
+
+        if (isset($this->openTracingData[$this->currentTransaction->getId()])) {
+            foreach ($context as $key => $value) {
+                $this->openTracingData[$this->currentTransaction->getId()]['tags']["custom.{$key}"] = $this->formatTagValue($value);
+            }
         }
+    }
+
+    public function setLabels(array $labels): void
+    {
+        $this->setTransactionLabels($labels);
     }
 
     public function getCurrentTraceId(): ?string
     {
-        return $this->currentTransaction['trace_id'] ?? null;
+        return $this->currentTransaction ? $this->currentTransaction->getTraceId() : null;
     }
 
     public function getCurrentTransactionId(): ?string
     {
-        return $this->currentTransaction['span_id'] ?? null;
+        return $this->currentTransaction ? $this->currentTransaction->getId() : null;
+    }
+
+    public function getCurrentTransaction(): ?Transaction
+    {
+        return $this->currentTransaction;
+    }
+
+    public function getTraceContext(): array
+    {
+        if (!$this->currentTransaction) {
+            return [];
+        }
+
+        return [
+            'trace_id' => $this->currentTransaction->getTraceId(),
+            'transaction_id' => $this->currentTransaction->getId(),
+            'parent_span_id' => !empty($this->spanStack) ? end($this->spanStack)->getId() : null,
+        ];
     }
 
     public function startRequestTransaction(Request $request): void
@@ -363,19 +509,24 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
         }
 
         $name = $this->namingStrategy->getTransactionName($request);
-        $this->beginTransaction($name, 'request');
+        $transaction = $this->startTransaction($name, 'request');
 
         // Handle distributed tracing headers
-        $this->handleDistributedTracing($request);
+        $this->handleDistributedTracing($request, $transaction);
 
         // Set HTTP-specific tags
-        $this->currentTransaction['tags'] = array_merge($this->currentTransaction['tags'], [
-            'http.method' => $request->getMethod(),
-            'http.url' => $request->getUri(),
-            'http.route' => $request->attributes->get('_route', 'unknown'),
-            'http.user_agent' => $request->headers->get('User-Agent', ''),
-            'span.kind' => 'server',
-        ]);
+        if (isset($this->openTracingData[$transaction->getId()])) {
+            $this->openTracingData[$transaction->getId()]['tags'] = array_merge(
+                $this->openTracingData[$transaction->getId()]['tags'],
+                [
+                    'http.method' => $request->getMethod(),
+                    'http.url' => $request->getUri(),
+                    'http.route' => $request->attributes->get('_route', 'unknown'),
+                    'http.user_agent' => $request->headers->get('User-Agent', ''),
+                    'span.kind' => 'server',
+                ]
+            );
+        }
     }
 
     public function endRequestTransaction(Response $response): void
@@ -385,37 +536,50 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
         }
 
         // Set response tags
-        $this->currentTransaction['tags']['http.status_code'] = $response->getStatusCode();
+        if (isset($this->openTracingData[$this->currentTransaction->getId()])) {
+            $this->openTracingData[$this->currentTransaction->getId()]['tags']['http.status_code'] = $response->getStatusCode();
+        }
         
-        $result = (string) $response->getStatusCode();
-        $outcome = $response->getStatusCode() >= 400 ? 'failure' : 'success';
-
-        $this->endCurrentTransaction($result, $outcome);
+        $result = $response->getStatusCode();
+        $this->stopTransaction($this->currentTransaction, $result);
     }
 
-    private function handleDistributedTracing(Request $request): void
+    public function flush(): void
+    {
+        // OpenTracing sends data immediately, so nothing to flush
+        $this->logger?->debug('[OpenTracing] Flush called (no-op for OpenTracing)');
+    }
+
+    private function handleDistributedTracing(Request $request, Transaction $transaction): void
     {
         // Check for W3C Trace Context (traceparent header)
         $traceparent = $request->headers->get('traceparent');
         if ($traceparent && preg_match('/^[\da-f]{2}-([\da-f]{32})-([\da-f]{16})-[\da-f]{2}$/', $traceparent, $matches)) {
-            $this->currentTransaction['trace_id'] = $matches[1];
-            $this->currentTransaction['references'][] = [
-                'type' => 'child_of',
-                'trace_id' => $matches[1],
-                'span_id' => $matches[2],
-            ];
+            $transaction->setTraceId($matches[1]);
+            if (isset($this->openTracingData[$transaction->getId()])) {
+                $this->openTracingData[$transaction->getId()]['trace_id'] = $matches[1];
+                $this->openTracingData[$transaction->getId()]['references'][] = [
+                    'type' => 'child_of',
+                    'trace_id' => $matches[1],
+                    'span_id' => $matches[2],
+                ];
+            }
             return;
         }
 
         // Check for Jaeger headers
         $uberTraceId = $request->headers->get('uber-trace-id');
         if ($uberTraceId && preg_match('/^([\da-f]+):([\da-f]+):([\da-f]+):(.*)$/', $uberTraceId, $matches)) {
-            $this->currentTransaction['trace_id'] = str_pad($matches[1], 32, '0', STR_PAD_LEFT);
-            $this->currentTransaction['references'][] = [
-                'type' => 'child_of',
-                'trace_id' => str_pad($matches[1], 32, '0', STR_PAD_LEFT),
-                'span_id' => str_pad($matches[2], 16, '0', STR_PAD_LEFT),
-            ];
+            $traceId = str_pad($matches[1], 32, '0', STR_PAD_LEFT);
+            $transaction->setTraceId($traceId);
+            if (isset($this->openTracingData[$transaction->getId()])) {
+                $this->openTracingData[$transaction->getId()]['trace_id'] = $traceId;
+                $this->openTracingData[$transaction->getId()]['references'][] = [
+                    'type' => 'child_of',
+                    'trace_id' => $traceId,
+                    'span_id' => str_pad($matches[2], 16, '0', STR_PAD_LEFT),
+                ];
+            }
             return;
         }
 
@@ -423,12 +587,16 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
         $b3TraceId = $request->headers->get('x-b3-traceid');
         $b3SpanId = $request->headers->get('x-b3-spanid');
         if ($b3TraceId && $b3SpanId) {
-            $this->currentTransaction['trace_id'] = str_pad($b3TraceId, 32, '0', STR_PAD_LEFT);
-            $this->currentTransaction['references'][] = [
-                'type' => 'child_of',
-                'trace_id' => str_pad($b3TraceId, 32, '0', STR_PAD_LEFT),
-                'span_id' => str_pad($b3SpanId, 16, '0', STR_PAD_LEFT),
-            ];
+            $traceId = str_pad($b3TraceId, 32, '0', STR_PAD_LEFT);
+            $transaction->setTraceId($traceId);
+            if (isset($this->openTracingData[$transaction->getId()])) {
+                $this->openTracingData[$transaction->getId()]['trace_id'] = $traceId;
+                $this->openTracingData[$transaction->getId()]['references'][] = [
+                    'type' => 'child_of',
+                    'trace_id' => $traceId,
+                    'span_id' => str_pad($b3SpanId, 16, '0', STR_PAD_LEFT),
+                ];
+            }
         }
     }
 

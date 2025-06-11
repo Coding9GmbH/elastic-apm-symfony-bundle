@@ -118,6 +118,21 @@ class Transaction
         return $this->labels;
     }
     
+    public function addLabel(string $key, $value): void
+    {
+        $this->labels[$key] = $value;
+    }
+    
+    public function setContext(array $context): void
+    {
+        $this->context = array_merge($this->context, $context);
+    }
+    
+    public function setTraceId(string $traceId): void
+    {
+        $this->traceId = $traceId;
+    }
+    
     public function setMeta(array $meta): void
     {
         $this->customContext = array_merge($this->customContext, $meta);
