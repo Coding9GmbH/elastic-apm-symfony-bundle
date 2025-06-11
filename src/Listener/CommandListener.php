@@ -22,6 +22,7 @@
 namespace ElasticApmBundle\Listener;
 
 use ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
+use ElasticApmBundle\Model\Transaction;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
@@ -31,6 +32,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class CommandListener implements EventSubscriberInterface
 {
     private ElasticApmInteractorInterface $interactor;
+    private ?Transaction $currentTransaction = null;
 
     public function __construct(ElasticApmInteractorInterface $interactor)
     {
@@ -54,10 +56,10 @@ class CommandListener implements EventSubscriberInterface
         }
 
         $name = sprintf('console %s', $command->getName());
-        $this->interactor->beginCurrentTransaction($name, 'cli');
+        $this->currentTransaction = $this->interactor->startTransaction($name, 'cli');
 
         // Set command context
-        $this->interactor->setTransactionContext([
+        $this->interactor->setCustomContext([
             'cli' => [
                 'command' => $command->getName(),
                 'arguments' => $event->getInput()->getArguments(),
@@ -68,11 +70,11 @@ class CommandListener implements EventSubscriberInterface
 
     public function onConsoleTerminate(ConsoleTerminateEvent $event): void
     {
-        $exitCode = $event->getExitCode();
-        $result = $exitCode === 0 ? 'success' : sprintf('exit:%d', $exitCode);
-        $outcome = $exitCode === 0 ? 'success' : 'failure';
-
-        $this->interactor->endCurrentTransaction($result, $outcome);
+        if ($this->currentTransaction) {
+            $exitCode = $event->getExitCode();
+            $this->interactor->stopTransaction($this->currentTransaction, $exitCode);
+            $this->currentTransaction = null;
+        }
     }
 
     public function onConsoleError(ConsoleErrorEvent $event): void
