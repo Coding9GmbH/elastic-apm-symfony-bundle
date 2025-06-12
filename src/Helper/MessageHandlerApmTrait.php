@@ -54,7 +54,10 @@ trait MessageHandlerApmTrait
             }
             
             return $callback();
-        }, 'handler', $operation);
+        }, [
+            'subtype' => 'handler',
+            'action' => $operation
+        ]);
     }
 
     /**
@@ -70,7 +73,10 @@ trait MessageHandlerApmTrait
             ? sprintf('DB %s %s', $operation, $entityType)
             : sprintf('DB %s', $operation);
             
-        return $this->apmInteractor->captureCurrentSpan($spanName, 'db', $callback, 'mysql', strtolower($operation));
+        return $this->apmInteractor->captureCurrentSpan($spanName, 'db', $callback, [
+            'subtype' => 'mysql',
+            'action' => strtolower($operation)
+        ]);
     }
 
     /**
@@ -84,7 +90,10 @@ trait MessageHandlerApmTrait
 
         $spanName = sprintf('External %s.%s', $service, $operation);
         
-        return $this->apmInteractor->captureCurrentSpan($spanName, 'external', $callback, 'http', $operation);
+        return $this->apmInteractor->captureCurrentSpan($spanName, 'external', $callback, [
+            'subtype' => 'http',
+            'action' => $operation
+        ]);
     }
 
     /**
@@ -100,7 +109,10 @@ trait MessageHandlerApmTrait
             ? sprintf('Validate %s %s', $validationType, $entityType)
             : sprintf('Validate %s', $validationType);
             
-        return $this->apmInteractor->captureCurrentSpan($spanName, 'validation', $callback, 'form', $validationType);
+        return $this->apmInteractor->captureCurrentSpan($spanName, 'validation', $callback, [
+            'subtype' => 'form',
+            'action' => $validationType
+        ]);
     }
 
     /**
@@ -114,7 +126,10 @@ trait MessageHandlerApmTrait
 
         $spanName = sprintf('File %s: %s', $operation, basename($fileName));
         
-        return $this->apmInteractor->captureCurrentSpan($spanName, 'storage', $callback, 's3', strtolower($operation));
+        return $this->apmInteractor->captureCurrentSpan($spanName, 'storage', $callback, [
+            'subtype' => 's3',
+            'action' => strtolower($operation)
+        ]);
     }
 
     /**
@@ -126,34 +141,42 @@ trait MessageHandlerApmTrait
             return;
         }
 
+        // Collect labels to set all at once
+        $labels = [];
+
         // Add common message labels
         if (isset($messageData['messageType'])) {
-            $this->apmInteractor->addTransactionLabel('message.type', $messageData['messageType']);
+            $labels['message.type'] = $messageData['messageType'];
         }
         
         if (isset($messageData['messageAction'])) {
-            $this->apmInteractor->addTransactionLabel('message.action', $messageData['messageAction']);
+            $labels['message.action'] = $messageData['messageAction'];
         }
         
         if (isset($messageData['messageSource'])) {
-            $this->apmInteractor->addTransactionLabel('message.source', $messageData['messageSource']);
+            $labels['message.source'] = $messageData['messageSource'];
         }
         
         if (isset($messageData['transactionId'])) {
-            $this->apmInteractor->addTransactionLabel('message.transaction_id', $messageData['transactionId']);
+            $labels['message.transaction_id'] = $messageData['transactionId'];
         }
 
         // Add entity-specific labels
         if (isset($messageData['globalAccountId'])) {
-            $this->apmInteractor->addTransactionLabel('entity.account_id', $messageData['globalAccountId']);
+            $labels['entity.account_id'] = $messageData['globalAccountId'];
         }
         
         if (isset($messageData['globalContactId'])) {
-            $this->apmInteractor->addTransactionLabel('entity.contact_id', $messageData['globalContactId']);
+            $labels['entity.contact_id'] = $messageData['globalContactId'];
         }
         
         if (isset($messageData['accountNumber'])) {
-            $this->apmInteractor->addTransactionLabel('entity.account_number', $messageData['accountNumber']);
+            $labels['entity.account_number'] = $messageData['accountNumber'];
+        }
+
+        // Set all labels at once
+        if (!empty($labels)) {
+            $this->apmInteractor->setLabels($labels);
         }
     }
 
@@ -186,7 +209,11 @@ trait MessageHandlerApmTrait
         }
 
         if ($userId || $email || $username) {
-            $this->apmInteractor->setUserContext($userId, $email, $username);
+            $context = [];
+            if ($userId) $context['id'] = $userId;
+            if ($email) $context['email'] = $email;
+            if ($username) $context['username'] = $username;
+            $this->apmInteractor->setUserContext($context);
         }
     }
 
