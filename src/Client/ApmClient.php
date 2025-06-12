@@ -207,6 +207,10 @@ class ApmClient
                 'name' => $this->config['service']['name'] ?? 'symfony-app',
                 'version' => $this->config['service']['version'] ?? '1.0.0',
                 'environment' => $this->config['service']['environment'] ?? 'production',
+                'agent' => [
+                    'name' => 'elastic-apm-symfony',
+                    'version' => '1.0.0',
+                ],
                 'language' => [
                     'name' => 'php',
                     'version' => PHP_VERSION,
