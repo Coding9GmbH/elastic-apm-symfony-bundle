@@ -19,9 +19,9 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Helper;
+namespace Coding9\ElasticApmBundle\Helper;
 
-use ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
+use Coding9\ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
 
 /**
  * Trait for message handlers to easily add APM tracking

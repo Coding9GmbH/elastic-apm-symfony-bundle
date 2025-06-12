@@ -19,7 +19,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\TransactionNamingStrategy;
+namespace Coding9\ElasticApmBundle\TransactionNamingStrategy;
 
 use Symfony\Component\HttpFoundation\Request;
 

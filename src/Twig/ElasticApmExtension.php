@@ -19,9 +19,9 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Twig;
+namespace Coding9\ElasticApmBundle\Twig;
 
-use ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
+use Coding9\ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 

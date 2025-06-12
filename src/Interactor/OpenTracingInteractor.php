@@ -19,11 +19,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Interactor;
+namespace Coding9\ElasticApmBundle\Interactor;
 
-use ElasticApmBundle\Model\Span;
-use ElasticApmBundle\Model\Transaction;
-use ElasticApmBundle\TransactionNamingStrategy\TransactionNamingStrategyInterface;
+use Coding9\ElasticApmBundle\Model\Span;
+use Coding9\ElasticApmBundle\Model\Transaction;
+use Coding9\ElasticApmBundle\TransactionNamingStrategy\TransactionNamingStrategyInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;

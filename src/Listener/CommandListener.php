@@ -19,10 +19,10 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Listener;
+namespace Coding9\ElasticApmBundle\Listener;
 
-use ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
-use ElasticApmBundle\Model\Transaction;
+use Coding9\ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
+use Coding9\ElasticApmBundle\Model\Transaction;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;

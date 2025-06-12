@@ -19,7 +19,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\DependencyInjection;
+namespace Coding9\ElasticApmBundle\DependencyInjection;
 
 class ConfigFactory
 {

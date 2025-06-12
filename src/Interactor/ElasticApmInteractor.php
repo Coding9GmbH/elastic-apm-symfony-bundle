@@ -19,12 +19,12 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Interactor;
+namespace Coding9\ElasticApmBundle\Interactor;
 
-use ElasticApmBundle\Model\Transaction;
-use ElasticApmBundle\Model\Span;
-use ElasticApmBundle\Model\Error;
-use ElasticApmBundle\Client\ApmClient;
+use Coding9\ElasticApmBundle\Model\Transaction;
+use Coding9\ElasticApmBundle\Model\Span;
+use Coding9\ElasticApmBundle\Model\Error;
+use Coding9\ElasticApmBundle\Client\ApmClient;
 
 class ElasticApmInteractor implements ElasticApmInteractorInterface
 {

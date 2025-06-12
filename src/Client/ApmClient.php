@@ -19,11 +19,11 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Client;
+namespace Coding9\ElasticApmBundle\Client;
 
-use ElasticApmBundle\Model\Transaction;
-use ElasticApmBundle\Model\Span;
-use ElasticApmBundle\Model\Error;
+use Coding9\ElasticApmBundle\Model\Transaction;
+use Coding9\ElasticApmBundle\Model\Span;
+use Coding9\ElasticApmBundle\Model\Error;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 

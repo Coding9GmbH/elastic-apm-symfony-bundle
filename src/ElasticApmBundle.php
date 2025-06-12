@@ -19,7 +19,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle;
+namespace Coding9\ElasticApmBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
