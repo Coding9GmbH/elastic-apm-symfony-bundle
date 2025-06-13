@@ -77,12 +77,12 @@
     },
     "autoload": {
         "psr-4": {
-            "ElasticApmBundle\\": "src/"
+            "Coding9\\ElasticApmBundle\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "ElasticApmBundle\\Tests\\": "tests/"
+            "Coding9\\ElasticApmBundle\\Tests\\": "tests/"
         }
     },
     "config": {

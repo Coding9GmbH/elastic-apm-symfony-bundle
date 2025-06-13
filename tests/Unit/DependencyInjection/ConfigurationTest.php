@@ -19,9 +19,9 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Tests\Unit\DependencyInjection;
+namespace Coding9\ElasticApmBundle\Tests\Unit\DependencyInjection;
 
-use ElasticApmBundle\DependencyInjection\Configuration;
+use Coding9\ElasticApmBundle\DependencyInjection\Configuration;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Config\Definition\Processor;
 

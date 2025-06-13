@@ -19,13 +19,13 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Tests\Unit\Interactor;
+namespace Coding9\ElasticApmBundle\Tests\Unit\Interactor;
 
-use ElasticApmBundle\Interactor\ElasticApmInteractor;
-use ElasticApmBundle\Model\Transaction;
-use ElasticApmBundle\Model\Span;
-use ElasticApmBundle\Model\Error;
-use ElasticApmBundle\Client\ApmClient;
+use Coding9\ElasticApmBundle\Interactor\ElasticApmInteractor;
+use Coding9\ElasticApmBundle\Model\Transaction;
+use Coding9\ElasticApmBundle\Model\Span;
+use Coding9\ElasticApmBundle\Model\Error;
+use Coding9\ElasticApmBundle\Client\ApmClient;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 

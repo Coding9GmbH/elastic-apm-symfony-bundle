@@ -19,12 +19,12 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Tests\Unit\Interactor;
+namespace Coding9\ElasticApmBundle\Tests\Unit\Interactor;
 
-use ElasticApmBundle\Interactor\AdaptiveInteractor;
-use ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
-use ElasticApmBundle\Model\Transaction;
-use ElasticApmBundle\Model\Span;
+use Coding9\ElasticApmBundle\Interactor\AdaptiveInteractor;
+use Coding9\ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
+use Coding9\ElasticApmBundle\Model\Transaction;
+use Coding9\ElasticApmBundle\Model\Span;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 

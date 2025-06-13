@@ -19,9 +19,9 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Tests\Unit\Interactor;
+namespace Coding9\ElasticApmBundle\Tests\Unit\Interactor;
 
-use ElasticApmBundle\Interactor\BlackholeInteractor;
+use Coding9\ElasticApmBundle\Interactor\BlackholeInteractor;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;

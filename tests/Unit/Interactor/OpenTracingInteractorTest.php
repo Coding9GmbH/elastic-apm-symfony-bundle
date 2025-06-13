@@ -1,11 +1,11 @@
 <?php
 
-namespace ElasticApmBundle\Tests\Unit\Interactor;
+namespace Coding9\ElasticApmBundle\Tests\Unit\Interactor;
 
-use ElasticApmBundle\Interactor\OpenTracingInteractor;
-use ElasticApmBundle\Model\Span;
-use ElasticApmBundle\Model\Transaction;
-use ElasticApmBundle\TransactionNamingStrategy\TransactionNamingStrategyInterface;
+use Coding9\ElasticApmBundle\Interactor\OpenTracingInteractor;
+use Coding9\ElasticApmBundle\Model\Span;
+use Coding9\ElasticApmBundle\Model\Transaction;
+use Coding9\ElasticApmBundle\TransactionNamingStrategy\TransactionNamingStrategyInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;

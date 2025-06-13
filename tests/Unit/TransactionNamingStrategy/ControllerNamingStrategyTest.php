@@ -19,9 +19,9 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Tests\Unit\TransactionNamingStrategy;
+namespace Coding9\ElasticApmBundle\Tests\Unit\TransactionNamingStrategy;
 
-use ElasticApmBundle\TransactionNamingStrategy\ControllerNamingStrategy;
+use Coding9\ElasticApmBundle\TransactionNamingStrategy\ControllerNamingStrategy;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 

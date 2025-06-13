@@ -19,13 +19,13 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Tests\Unit\Listener;
+namespace Coding9\ElasticApmBundle\Tests\Unit\Listener;
 
-use ElasticApmBundle\Listener\RequestListener;
-use ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
-use ElasticApmBundle\TransactionNamingStrategy\TransactionNamingStrategyInterface;
-use ElasticApmBundle\Tests\SymfonyCompat;
-use ElasticApmBundle\Model\Transaction;
+use Coding9\ElasticApmBundle\Listener\RequestListener;
+use Coding9\ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
+use Coding9\ElasticApmBundle\TransactionNamingStrategy\TransactionNamingStrategyInterface;
+use Coding9\ElasticApmBundle\Tests\SymfonyCompat;
+use Coding9\ElasticApmBundle\Model\Transaction;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\HttpFoundation\Request;

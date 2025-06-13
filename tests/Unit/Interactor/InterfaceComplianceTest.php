@@ -1,12 +1,12 @@
 <?php
 
-namespace ElasticApmBundle\Tests\Unit\Interactor;
+namespace Coding9\ElasticApmBundle\Tests\Unit\Interactor;
 
-use ElasticApmBundle\Interactor\AdaptiveInteractor;
-use ElasticApmBundle\Interactor\BlackholeInteractor;
-use ElasticApmBundle\Interactor\ElasticApmInteractor;
-use ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
-use ElasticApmBundle\Interactor\OpenTracingInteractor;
+use Coding9\ElasticApmBundle\Interactor\AdaptiveInteractor;
+use Coding9\ElasticApmBundle\Interactor\BlackholeInteractor;
+use Coding9\ElasticApmBundle\Interactor\ElasticApmInteractor;
+use Coding9\ElasticApmBundle\Interactor\ElasticApmInteractorInterface;
+use Coding9\ElasticApmBundle\Interactor\OpenTracingInteractor;
 use PHPUnit\Framework\TestCase;
 
 /**

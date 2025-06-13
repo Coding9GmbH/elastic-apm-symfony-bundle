@@ -19,7 +19,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-namespace ElasticApmBundle\Tests;
+namespace Coding9\ElasticApmBundle\Tests;
 
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 
