@@ -1,0 +1,44 @@
+# Erweiterte Konfiguration für Integrationstests
+services:
+  # Test-Symfony-App
+  symfony-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.symfony-test
+    container_name: symfony-test-app
+    ports:
+      - "8080:8000"
+    volumes:
+      - .:/bundle
+      - symfony_app:/app
+    environment:
+      - ELASTIC_APM_SERVER_URL=http://apm-server:8200
+      - ELASTIC_APM_SERVICE_NAME=symfony-demo
+      - ELASTIC_APM_ENVIRONMENT=test
+    command: php -S 0.0.0.0:8000 -t public
+    networks:
+      - apm-network
+    depends_on:
+      apm-server:
+        condition: service_healthy
+
+  # Test Runner für automatisierte Tests
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apm-test-runner
+    volumes:
+      - .:/app
+    environment:
+      - SYMFONY_DEPRECATIONS_HELPER=disabled
+    command: vendor/bin/phpunit
+    networks:
+      - apm-network
+    depends_on:
+      - elasticsearch
+      - apm-server
+
+volumes:
+  symfony_app:
+    driver: local

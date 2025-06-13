@@ -1,0 +1,17 @@
+elastic_apm:
+    enabled: true
+    server:
+        url: '%env(ELASTIC_APM_SERVER_URL)%'
+    service:
+        name: '%env(ELASTIC_APM_SERVICE_NAME)%'
+        environment: '%env(ELASTIC_APM_ENVIRONMENT)%'
+    # Tracke alle Requests
+    transactions:
+        sample_rate: 1.0
+    # Aktiviere alle Features
+    exceptions:
+        enabled: true
+    memory:
+        enabled: true
+    messaging:
+        enabled: true

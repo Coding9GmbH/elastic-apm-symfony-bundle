@@ -1,0 +1,9 @@
+.git
+.gitignore
+vendor/
+.idea/
+.vscode/
+*.log
+*.cache
+.DS_Store
+docker-compose.override.yml

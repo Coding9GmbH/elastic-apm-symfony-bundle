@@ -1,0 +1,38 @@
+FROM php:8.2-fpm
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    libzip-dev \
+    nginx \
+    supervisor \
+    && docker-php-ext-install zip opcache \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Create app directory
+WORKDIR /app
+
+# Create a fresh Symfony project
+RUN composer create-project symfony/skeleton:^7.0 . --no-interaction
+
+# Add the APM bundle as a local repository
+RUN composer config repositories.apm-bundle path /bundle
+
+# Install the APM bundle
+RUN composer require coding9/elastic-apm-symfony-bundle:@dev --no-interaction
+
+# Copy test controller
+COPY tests/fixtures/TestController.php src/Controller/
+
+# Copy APM configuration
+COPY tests/fixtures/elastic_apm.yaml config/packages/
+
+# Expose port
+EXPOSE 8000
+
+# Start PHP built-in server
+CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]

@@ -1,0 +1,93 @@
+services:
+  # Elasticsearch für APM Daten
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+    container_name: apm-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - apm-network
+
+  # Kibana für Visualisierung
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.9
+    container_name: apm-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - apm-network
+
+  # APM Server
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:7.17.9
+    container_name: apm-server
+    command: --strict.perms=false
+    environment:
+      - output.elasticsearch.hosts=["elasticsearch:9200"]
+      - apm-server.host=0.0.0.0:8200
+      - apm-server.rum.enabled=true
+      - setup.kibana.host=kibana:5601
+      - setup.template.settings.index.number_of_replicas=0
+    ports:
+      - "8200:8200"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8200/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - apm-network
+
+  # PHP-Container für Tests
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apm-php-test
+    volumes:
+      - .:/app
+      - ./tests/symfony-test:/symfony-test
+    working_dir: /app
+    environment:
+      - ELASTIC_APM_SERVER_URL=http://apm-server:8200
+      - ELASTIC_APM_SERVICE_NAME=symfony-test-app
+      - ELASTIC_APM_ENVIRONMENT=test
+    networks:
+      - apm-network
+    depends_on:
+      apm-server:
+        condition: service_healthy
+
+networks:
+  apm-network:
+    driver: bridge
+
+volumes:
+  elasticsearch_data:
+    driver: local
