@@ -12,6 +12,6 @@ elastic_apm:
     exceptions:
         enabled: true
     memory:
-        enabled: true
+        track_usage: true
     messaging:
         enabled: true

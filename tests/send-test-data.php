@@ -10,21 +10,17 @@ use Coding9\ElasticApmBundle\Interactor\ElasticApmInteractor;
 
 $config = [
     'enabled' => true,
-    'server_url' => getenv('ELASTIC_APM_SERVER_URL') ?: 'http://apm-server:8200',
-    'service_name' => 'test-script',
-    'environment' => 'test',
-    'transaction_sample_rate' => 1.0,
-    'metadata' => [
-        'service' => [
-            'name' => 'test-script',
-            'environment' => 'test',
-            'version' => '1.0.0',
-            'agent' => [
-                'name' => 'elastic-apm-symfony',
-                'version' => '1.0.0'
-            ]
-        ]
-    ]
+    'server' => [
+        'url' => getenv('ELASTIC_APM_SERVER_URL') ?: 'http://apm-server:8200',
+    ],
+    'service' => [
+        'name' => 'test-script',
+        'environment' => 'test',
+        'version' => '1.0.0',
+    ],
+    'transactions' => [
+        'sample_rate' => 1.0,
+    ],
 ];
 
 $apm = new ElasticApmInteractor($config);

@@ -171,9 +171,9 @@ class Transaction
             'result' => $this->result,
             'sampled' => $this->sampled,
             'context' => [
-                'user' => $this->userContext,
-                'custom' => $this->customContext,
-                'tags' => $this->labels,
+                'user' => empty($this->userContext) ? new \stdClass() : $this->userContext,
+                'custom' => empty($this->customContext) ? new \stdClass() : $this->customContext,
+                'tags' => empty($this->labels) ? new \stdClass() : $this->labels,
             ],
             'spans' => array_map(fn($span) => $span->toArray(), $this->spans),
             'span_count' => [

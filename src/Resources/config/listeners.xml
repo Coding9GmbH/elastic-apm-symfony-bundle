@@ -27,14 +27,14 @@
 
     <services>
         <!-- Request Listener -->
-        <service id="elastic_apm.listener.request" class="ElasticApmBundle\Listener\RequestListener">
+        <service id="elastic_apm.listener.request" class="Coding9\ElasticApmBundle\Listener\RequestListener">
             <argument type="service" id="elastic_apm.interactor"/>
             <argument type="service" id="elastic_apm.naming_strategy"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 
         <!-- Exception Listener -->
-        <service id="elastic_apm.listener.exception" class="ElasticApmBundle\Listener\ExceptionListener">
+        <service id="elastic_apm.listener.exception" class="Coding9\ElasticApmBundle\Listener\ExceptionListener">
             <argument type="service" id="elastic_apm.interactor"/>
             <argument>%elastic_apm.exceptions.ignored_exceptions%</argument>
             <argument>%elastic_apm.exceptions.unwrap_exceptions%</argument>
@@ -42,13 +42,13 @@
         </service>
 
         <!-- Command Listener -->
-        <service id="elastic_apm.listener.command" class="ElasticApmBundle\Listener\CommandListener">
+        <service id="elastic_apm.listener.command" class="Coding9\ElasticApmBundle\Listener\CommandListener">
             <argument type="service" id="elastic_apm.interactor"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 
         <!-- Messenger Listener -->
-        <service id="elastic_apm.listener.messenger" class="ElasticApmBundle\Listener\MessengerListener">
+        <service id="elastic_apm.listener.messenger" class="Coding9\ElasticApmBundle\Listener\MessengerListener">
             <argument type="service" id="elastic_apm.interactor"/>
             <tag name="kernel.event_subscriber"/>
         </service>

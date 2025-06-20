@@ -27,21 +27,21 @@
 
     <services>
         <!-- Route Naming Strategy -->
-        <service id="elastic_apm.naming_strategy.route" class="ElasticApmBundle\TransactionNamingStrategy\RouteNamingStrategy"/>
+        <service id="elastic_apm.naming_strategy.route" class="Coding9\ElasticApmBundle\TransactionNamingStrategy\RouteNamingStrategy"/>
 
         <!-- Controller Naming Strategy -->
-        <service id="elastic_apm.naming_strategy.controller" class="ElasticApmBundle\TransactionNamingStrategy\ControllerNamingStrategy"/>
+        <service id="elastic_apm.naming_strategy.controller" class="Coding9\ElasticApmBundle\TransactionNamingStrategy\ControllerNamingStrategy"/>
 
         <!-- URI Naming Strategy -->
-        <service id="elastic_apm.naming_strategy.uri" class="ElasticApmBundle\TransactionNamingStrategy\UriNamingStrategy"/>
+        <service id="elastic_apm.naming_strategy.uri" class="Coding9\ElasticApmBundle\TransactionNamingStrategy\UriNamingStrategy"/>
 
         <!-- Service Naming Strategy -->
-        <service id="elastic_apm.naming_strategy.service" class="ElasticApmBundle\TransactionNamingStrategy\ServiceNamingStrategy">
+        <service id="elastic_apm.naming_strategy.service" class="Coding9\ElasticApmBundle\TransactionNamingStrategy\ServiceNamingStrategy">
             <argument>%elastic_apm.service.name%</argument>
         </service>
 
         <!-- Message Naming Strategy -->
-        <service id="elastic_apm.naming_strategy.message" class="ElasticApmBundle\TransactionNamingStrategy\MessageNamingStrategy"/>
+        <service id="elastic_apm.naming_strategy.message" class="Coding9\ElasticApmBundle\TransactionNamingStrategy\MessageNamingStrategy"/>
 
         <!-- Default naming strategy alias will be set by Extension based on configuration -->
     </services>

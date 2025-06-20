@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         verbose="true"
+>
+    <php>
+        <!-- APM Server URL (default: http://localhost:8200) -->
+        <env name="APM_SERVER_URL" value="http://apm-server:8200" force="true"/>
+        
+        <!-- Elasticsearch URL (default: http://localhost:9200) -->
+        <env name="ELASTICSEARCH_URL" value="http://elasticsearch:9200" force="true"/>
+        
+        <!-- Symfony Test App URL (default: http://localhost:8080) -->
+        <env name="SYMFONY_APP_URL" value="http://symfony-app:8000" force="true"/>
+        
+        <!-- Disable deprecation helper for integration tests -->
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled"/>
+    </php>
+
+    <testsuites>
+        <testsuite name="Integration Tests">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+
+    <coverage>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </coverage>
+
+    <groups>
+        <exclude>
+            <group>performance</group>
+        </exclude>
+    </groups>
+</phpunit>

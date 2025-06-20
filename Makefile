@@ -20,9 +20,23 @@ down: ## Stoppt alle Container
 test: ## Führt die PHPUnit Tests aus
 	docker compose run --rm php vendor/bin/phpunit
 
-test-integration: ## Startet Symfony Test-App mit APM
+test-unit: ## Führt nur Unit Tests aus
+	docker compose run --rm php vendor/bin/phpunit --testsuite="Unit Tests"
+
+test-integration: ## Führt Integration Tests aus (startet alle Services)
+	@echo "Starting services for integration tests..."
+	docker compose up -d --wait
 	docker compose -f docker-compose.yml -f docker-compose.test.yml up -d symfony-app
-	@echo "✅ Symfony Test-App läuft auf http://localhost:8080"
+	@echo "Waiting for services to be ready..."
+	@sleep 10
+	docker compose run --rm php vendor/bin/phpunit -c phpunit-integration.xml.dist
+	
+test-integration-watch: ## Führt Integration Tests im Watch-Modus
+	docker compose run --rm php vendor/bin/phpunit -c phpunit-integration.xml.dist --testdox-html reports/integration.html
+
+test-all: ## Führt alle Tests aus (Unit + Integration)
+	@make test-unit
+	@make test-integration
 
 logs: ## Zeigt Logs aller Services
 	docker compose logs -f

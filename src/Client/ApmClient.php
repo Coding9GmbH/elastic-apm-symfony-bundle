@@ -83,11 +83,18 @@ class ApmClient
     
     public function flush(): void
     {
+        $this->logger->debug('APM flush called', [
+            'queue_size' => count($this->queue),
+            'enabled' => $this->isEnabled(),
+            'circuit_breaker_open' => $this->isCircuitBreakerOpen()
+        ]);
+        
         if (empty($this->queue) || !$this->isEnabled() || $this->isCircuitBreakerOpen()) {
             return;
         }
         
         $payload = $this->buildPayload();
+        $this->logger->debug('APM payload built', ['payload_size' => strlen($payload)]);
         $this->sendToApmServer($payload);
         $this->queue = [];
     }
@@ -146,6 +153,12 @@ class ApmClient
     {
         $url = rtrim($this->config['server']['url'] ?? 'http://localhost:8200', '/') . '/intake/v2/events';
         
+        $this->logger->info('APM sending data', [
+            'url' => $url,
+            'payload_size' => strlen($payload),
+            'payload_preview' => substr($payload, 0, 200)
+        ]);
+        
         $headers = [
             'Content-Type: application/x-ndjson',
             'User-Agent: elastic-apm-symfony/1.0',
@@ -177,13 +190,24 @@ class ApmClient
         curl_close($ch);
         
         if ($error) {
-            $this->logger->error('Failed to send APM data: ' . $error);
+            $this->logger->error('Failed to send APM data: ' . $error, [
+                'url' => $url,
+                'curl_error' => $error
+            ]);
             $this->recordFailure();
         } elseif ($httpCode >= 400) {
-            $this->logger->error('APM server returned error: HTTP ' . $httpCode . ' - ' . $response);
+            $this->logger->error('APM server returned error', [
+                'http_code' => $httpCode,
+                'response' => $response,
+                'url' => $url
+            ]);
             $this->recordFailure();
         } else {
-            $this->logger->debug('Successfully sent APM data');
+            $this->logger->info('Successfully sent APM data', [
+                'http_code' => $httpCode,
+                'url' => $url,
+                'response' => substr($response, 0, 100)
+            ]);
             $this->recordSuccess();
         }
     }

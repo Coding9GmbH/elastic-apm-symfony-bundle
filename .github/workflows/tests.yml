@@ -1,0 +1,112 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2', '8.3']
+        symfony-version: ['^6.4', '^7.0']
+        exclude:
+          - php-version: '8.1'
+            symfony-version: '^7.0'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-version }}
+        coverage: xdebug
+    
+    - name: Install dependencies
+      run: |
+        composer require symfony/framework-bundle:${{ matrix.symfony-version }} --no-update
+        composer install --prefer-dist --no-progress
+    
+    - name: Run unit tests
+      run: vendor/bin/phpunit --testsuite="Unit Tests"
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: false
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -f http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      apm-server:
+        image: docker.elastic.co/apm/apm-server:7.17.9
+        env:
+          output.elasticsearch.hosts: '["elasticsearch:9200"]'
+          apm-server.host: 0.0.0.0:8200
+        ports:
+          - 8200:8200
+        options: >-
+          --health-cmd "curl -f http://localhost:8200/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        coverage: xdebug
+    
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress
+    
+    - name: Wait for services
+      run: |
+        timeout 60 bash -c 'until curl -f http://localhost:9200/_cluster/health; do sleep 1; done'
+        timeout 60 bash -c 'until curl -f http://localhost:8200/; do sleep 1; done'
+    
+    - name: Run integration tests
+      env:
+        APM_SERVER_URL: http://localhost:8200
+        ELASTICSEARCH_URL: http://localhost:9200
+      run: vendor/bin/phpunit -c phpunit-integration.xml.dist
+    
+    - name: Verify APM data
+      if: always()
+      run: php tests/verify-apm-data.php
+
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+    
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress
+    
+    - name: Run PHPStan
+      run: vendor/bin/phpstan analyse
+    
+    - name: Check code style
+      run: vendor/bin/php-cs-fixer fix --dry-run --diff

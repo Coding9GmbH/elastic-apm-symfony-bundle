@@ -19,20 +19,27 @@ WORKDIR /app
 # Create a fresh Symfony project
 RUN composer create-project symfony/skeleton:^7.0 . --no-interaction
 
-# Add the APM bundle as a local repository
-RUN composer config repositories.apm-bundle path /bundle
+# Install required packages first
+RUN composer require \
+    symfony/messenger \
+    symfony/monolog-bundle \
+    --no-interaction
 
-# Install the APM bundle
-RUN composer require coding9/elastic-apm-symfony-bundle:@dev --no-interaction
-
-# Copy test controller
+# Copy test files
 COPY tests/fixtures/TestController.php src/Controller/
+COPY tests/fixtures/ProcessDataMessage.php src/Message/
+COPY tests/fixtures/ProcessDataMessageHandler.php src/MessageHandler/
 
-# Copy APM configuration
+# Copy configuration files
 COPY tests/fixtures/elastic_apm.yaml config/packages/
+COPY tests/fixtures/messenger.yaml config/packages/
+
+# Copy startup script
+COPY tests/fixtures/startup.sh /app/startup.sh
+RUN chmod +x /app/startup.sh
 
 # Expose port
 EXPOSE 8000
 
 # Start PHP built-in server
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "public"]
+CMD ["/app/startup.sh"]

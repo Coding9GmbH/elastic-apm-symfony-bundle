@@ -1,0 +1,2 @@
+elastic_apm:
+    enabled: false

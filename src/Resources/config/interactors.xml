@@ -27,7 +27,7 @@
 
     <services>
         <!-- ElasticApm Interactor -->
-        <service id="elastic_apm.interactor.elastic_apm" class="ElasticApmBundle\Interactor\ElasticApmInteractor">
+        <service id="elastic_apm.interactor.elastic_apm" class="Coding9\ElasticApmBundle\Interactor\ElasticApmInteractor">
             <argument type="collection">
                 <argument key="enabled">%elastic_apm.enabled%</argument>
                 <argument key="server" type="collection">
@@ -50,10 +50,10 @@
         </service>
 
         <!-- Blackhole Interactor -->
-        <service id="elastic_apm.interactor.blackhole" class="ElasticApmBundle\Interactor\BlackholeInteractor"/>
+        <service id="elastic_apm.interactor.blackhole" class="Coding9\ElasticApmBundle\Interactor\BlackholeInteractor"/>
 
         <!-- OpenTracing Interactor -->
-        <service id="elastic_apm.interactor.opentracing" class="ElasticApmBundle\Interactor\OpenTracingInteractor">
+        <service id="elastic_apm.interactor.opentracing" class="Coding9\ElasticApmBundle\Interactor\OpenTracingInteractor">
             <argument type="collection">
                 <argument key="enabled">%elastic_apm.enabled%</argument>
                 <argument key="server" type="collection">
@@ -78,7 +78,7 @@
         </service>
 
         <!-- Adaptive Interactor -->
-        <service id="elastic_apm.interactor.adaptive" class="ElasticApmBundle\Interactor\AdaptiveInteractor">
+        <service id="elastic_apm.interactor.adaptive" class="Coding9\ElasticApmBundle\Interactor\AdaptiveInteractor">
             <argument type="service" id="elastic_apm.interactor.elastic_apm"/>
             <argument>%elastic_apm.enabled%</argument>
             <argument type="collection">

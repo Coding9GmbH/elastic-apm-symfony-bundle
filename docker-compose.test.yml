@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.symfony-test
     container_name: symfony-test-app
     ports:
-      - "8080:8000"
+      - "8888:8000"
     volumes:
       - .:/bundle
       - symfony_app:/app
@@ -15,6 +15,7 @@ services:
       - ELASTIC_APM_SERVER_URL=http://apm-server:8200
       - ELASTIC_APM_SERVICE_NAME=symfony-demo
       - ELASTIC_APM_ENVIRONMENT=test
+      - MESSENGER_TRANSPORT_DSN=doctrine://default
     command: php -S 0.0.0.0:8000 -t public
     networks:
       - apm-network

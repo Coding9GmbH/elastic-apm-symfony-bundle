@@ -28,7 +28,7 @@
     <services>
         <!-- Configuration service -->
         <service id="elastic_apm.config" class="stdClass">
-            <factory class="ElasticApmBundle\DependencyInjection\ConfigFactory" method="create"/>
+            <factory class="Coding9\ElasticApmBundle\DependencyInjection\ConfigFactory" method="create"/>
             <argument type="collection">
                 <argument key="enabled">%elastic_apm.enabled%</argument>
                 <argument key="server" type="collection">
@@ -49,13 +49,13 @@
         </service>
 
         <!-- Twig Extension -->
-        <service id="elastic_apm.twig_extension" class="ElasticApmBundle\Twig\ElasticApmExtension">
+        <service id="elastic_apm.twig_extension" class="Coding9\ElasticApmBundle\Twig\ElasticApmExtension">
             <argument type="service" id="elastic_apm.interactor"/>
             <tag name="twig.extension"/>
         </service>
 
         <!-- Helper trait for APM tracing -->
-        <service id="elastic_apm.tracing_trait" class="ElasticApmBundle\Helper\ApmTracingTrait" abstract="true">
+        <service id="elastic_apm.tracing_trait" class="Coding9\ElasticApmBundle\Helper\ApmTracingTrait" abstract="true">
             <call method="setApmInteractor">
                 <argument type="service" id="elastic_apm.interactor"/>
             </call>

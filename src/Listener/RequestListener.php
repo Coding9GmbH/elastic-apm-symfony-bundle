@@ -51,6 +51,7 @@ class RequestListener implements EventSubscriberInterface
             KernelEvents::REQUEST => ['onKernelRequest', 2048],
             KernelEvents::RESPONSE => ['onKernelResponse', -2048],
             KernelEvents::FINISH_REQUEST => ['onKernelFinishRequest', -2048],
+            KernelEvents::TERMINATE => ['onKernelTerminate', -1024],
         ];
     }
 
@@ -104,6 +105,12 @@ class RequestListener implements EventSubscriberInterface
             $this->interactor->stopTransaction($transaction);
             unset($this->transactions[$requestId]);
         }
+    }
+    
+    public function onKernelTerminate(): void
+    {
+        // Flush any pending APM data after response is sent
+        $this->interactor->flush();
     }
     
     private function getResultString(int $statusCode): string

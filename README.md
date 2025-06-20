@@ -328,5 +328,3 @@ This bundle is released under the MIT License. See the [LICENSE](LICENSE) file f
 ## Credits
 
 Developed with ❤️ by [Coding9 GmbH](https://coding9.de) - Your Symfony & APM experts.
-
-Inspired by [elastic-apm-symfony-bundle](https://github.com/MySchoolManagement/elastic-apm-symfony-bundle) with additional features for message queue tracking, OpenTracing support, and enhanced security.
