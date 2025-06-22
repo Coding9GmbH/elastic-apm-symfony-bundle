@@ -53,7 +53,13 @@ class TestController
         <button onclick="fetchData('/api/users')">Fetch Users (Normal Request)</button>
         <button onclick="fetchData('/api/slow')">Slow Request (2s delay)</button>
         <button onclick="fetchData('/api/error')">Trigger Error</button>
-        <button onclick="sendMessage()">Send Message to Queue</button>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <h3>Message Queue Tests:</h3>
+        <button onclick="sendMessage('success')">Send Success Message</button>
+        <button onclick="sendMessage('fail')">Send Failing Message (Validation Error)</button>
+        <button onclick="sendMessage('error')">Send Error Message (API Error)</button>
     </div>
     
     <div id="response" class="response" style="display:none;"></div>
@@ -81,11 +87,18 @@ class TestController
                 });
         }
         
-        function sendMessage() {
+        function sendMessage(type) {
             const responseDiv = document.getElementById('response');
             responseDiv.style.display = 'block';
             responseDiv.className = 'response';
             responseDiv.innerHTML = 'Sending message to queue...';
+            
+            let messageText = 'Test message at ' + new Date().toISOString();
+            if (type === 'fail') {
+                messageText = 'This message will fail validation at ' + new Date().toISOString();
+            } else if (type === 'error') {
+                messageText = 'This message will cause an error at ' + new Date().toISOString();
+            }
             
             fetch('/api/send-message', {
                 method: 'POST',
@@ -93,12 +106,13 @@ class TestController
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    data: 'Test message at ' + new Date().toISOString()
+                    data: messageText
                 })
             })
             .then(response => response.json())
             .then(data => {
-                responseDiv.innerHTML = '<strong>Message sent:</strong><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                responseDiv.innerHTML = '<strong>Message sent:</strong><pre>' + JSON.stringify(data, null, 2) + '</pre>' +
+                    '<p>Check Kibana APM to see the ' + type + ' message processing timeline!</p>';
             })
             .catch(error => {
                 responseDiv.className = 'response error';

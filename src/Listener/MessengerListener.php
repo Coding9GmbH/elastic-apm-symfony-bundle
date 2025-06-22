@@ -132,7 +132,7 @@ class MessengerListener implements EventSubscriberInterface
         $this->interactor->captureCurrentSpan($spanName, 'messaging', function() use ($envelope, $event) {
             // Set sending context
             $this->setSendingContext($envelope, $event->getSenders());
-        }, 'amqp', 'send');
+        }, ['subtype' => 'amqp', 'action' => 'send']);
     }
 
     private function setMessageContext($envelope, string $transportName, string $operation): void
