@@ -44,7 +44,7 @@ class BlackholeInteractorTest extends TestCase
     {
         $transaction = $this->interactor->startTransaction('test', 'request');
         
-        $this->assertInstanceOf(\ElasticApmBundle\Model\Transaction::class, $transaction);
+        $this->assertInstanceOf(\Coding9\ElasticApmBundle\Model\Transaction::class, $transaction);
         $this->assertEquals('test', $transaction->getName());
         $this->assertEquals('request', $transaction->getType());
     }
@@ -101,7 +101,7 @@ class BlackholeInteractorTest extends TestCase
         $transaction = $this->interactor->startTransaction('test', 'request');
         $span = $this->interactor->startSpan('test_span', 'db', 'mysql', $transaction);
         
-        $this->assertInstanceOf(\ElasticApmBundle\Model\Span::class, $span);
+        $this->assertInstanceOf(\Coding9\ElasticApmBundle\Model\Span::class, $span);
         $this->assertEquals('test_span', $span->getName());
         $this->assertEquals('db', $span->getType());
         $this->assertEquals('mysql', $span->getSubtype());

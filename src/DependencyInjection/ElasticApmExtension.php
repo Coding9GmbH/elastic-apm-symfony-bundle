@@ -104,7 +104,7 @@ class ElasticApmExtension extends Extension
             
             // Conditionally load memory listener
             if ($config['memory']['track_usage']) {
-                $definition = $container->register('elastic_apm.listener.memory', 'App\Bundle\ElasticApmBundle\Listener\MemoryUsageListener');
+                $definition = $container->register('elastic_apm.listener.memory', 'Coding9\ElasticApmBundle\Listener\MemoryUsageListener');
                 $definition->addArgument(new Reference('elastic_apm.interactor'));
                 $definition->addArgument($config['memory']['usage_label']);
                 $definition->addTag('kernel.event_subscriber');
@@ -121,8 +121,8 @@ class ElasticApmExtension extends Extension
             if ($container->hasDefinition('elastic_apm.controller.apm')) {
                 $container->removeDefinition('elastic_apm.controller.apm');
             }
-            if ($container->hasDefinition('App\\Bundle\\ElasticApmBundle\\Controller\\ApmController')) {
-                $container->removeDefinition('App\\Bundle\\ElasticApmBundle\\Controller\\ApmController');
+            if ($container->hasDefinition('Coding9\\ElasticApmBundle\\Controller\\ApmController')) {
+                $container->removeDefinition('Coding9\\ElasticApmBundle\\Controller\\ApmController');
             }
         }
 
@@ -135,7 +135,7 @@ class ElasticApmExtension extends Extension
         };
         
         $container->setAlias('elastic_apm.interactor', $interactorId)->setPublic(true);
-        $container->setAlias('App\\Bundle\\ElasticApmBundle\\Interactor\\ElasticApmInteractorInterface', $interactorId);
+        $container->setAlias('Coding9\\ElasticApmBundle\\Interactor\\ElasticApmInteractorInterface', $interactorId)->setPublic(true);
 
         // Set the naming strategy alias
         $namingStrategyId = match ($config['transactions']['naming_strategy']) {
@@ -147,7 +147,7 @@ class ElasticApmExtension extends Extension
         };
         
         $container->setAlias('elastic_apm.naming_strategy', $namingStrategyId)->setPublic(true);
-        $container->setAlias('App\\Bundle\\ElasticApmBundle\\TransactionNamingStrategy\\TransactionNamingStrategyInterface', $namingStrategyId);
+        $container->setAlias('Coding9\\ElasticApmBundle\\TransactionNamingStrategy\\TransactionNamingStrategyInterface', $namingStrategyId);
 
         // Configure logger if enabled
         if ($config['logging']) {

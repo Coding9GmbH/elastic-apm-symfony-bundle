@@ -93,8 +93,12 @@ class TestKernel extends Kernel
             
             $container->loadFromExtension('elastic_apm', [
                 'enabled' => true,
-                'app_name' => 'phpunit-test',
-                'server_url' => 'http://localhost:8200',
+                'service' => [
+                    'name' => 'phpunit-test',
+                ],
+                'server' => [
+                    'url' => 'http://localhost:8200',
+                ],
             ]);
         });
     }

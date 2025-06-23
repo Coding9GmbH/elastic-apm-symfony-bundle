@@ -647,7 +647,7 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
                 $fields[] = [
                     'key' => $key,
                     'type' => 'string',
-                    'value' => (string) $value,
+                    'value' => is_array($value) ? json_encode($value) : (string) $value,
                 ];
             }
             $logs[] = [
