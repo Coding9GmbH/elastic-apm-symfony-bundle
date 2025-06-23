@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.symfony-test
     container_name: symfony-test-app
     ports:
-      - "8888:8000"
+      - "8889:8000"
     volumes:
       - .:/bundle
       - symfony_app:/app
