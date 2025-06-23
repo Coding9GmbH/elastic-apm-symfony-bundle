@@ -156,7 +156,27 @@ HTML);
     #[Route('/api/error', name: 'error')]
     public function error(): Response
     {
-        throw new \Exception('Test exception for APM');
+        // Simulate some work before error
+        usleep(20000); // 20ms
+        
+        // Create a nested exception to test full stack trace
+        try {
+            $this->performDangerousOperation();
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Error in API endpoint', 500, $e);
+        }
+    }
+    
+    private function performDangerousOperation(): void
+    {
+        usleep(10000); // 10ms
+        $this->callDeepMethod();
+    }
+    
+    private function callDeepMethod(): void
+    {
+        usleep(5000); // 5ms
+        throw new \InvalidArgumentException('Something went wrong deep in the application stack');
     }
 
     #[Route('/api/random-status', name: 'random_status')]

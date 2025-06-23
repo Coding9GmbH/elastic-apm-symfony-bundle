@@ -53,5 +53,17 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
+        <!-- View Listener -->
+        <service id="elastic_apm.listener.view" class="Coding9\ElasticApmBundle\Listener\ViewListener">
+            <argument type="service" id="elastic_apm.interactor"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <!-- Doctrine Listener -->
+        <service id="elastic_apm.listener.doctrine" class="Coding9\ElasticApmBundle\Listener\DoctrineListener">
+            <argument type="service" id="elastic_apm.interactor"/>
+            <tag name="doctrine.sql_logger" channel="default"/>
+        </service>
+
     </services>
 </container>

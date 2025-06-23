@@ -43,7 +43,8 @@ interface ElasticApmInteractorInterface
         string $name,
         string $type,
         ?string $subtype = null,
-        ?Transaction $transaction = null
+        ?Transaction $transaction = null,
+        ?Span $parentSpan = null
     ): Span;
     
     /**

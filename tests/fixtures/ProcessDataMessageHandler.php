@@ -28,66 +28,94 @@ class ProcessDataMessageHandler
             ]);
         }
         
-        // Span 1: Validate message
-        if ($this->apm) {
-            $this->apm->captureCurrentSpan('Validate message', 'app.internal', function() use ($data) {
-                usleep(20000); // 20ms
-                
-                // Check if message contains "fail"
-                if (isset($data['data']) && str_contains($data['data'], 'fail')) {
-                    throw new \InvalidArgumentException('Message validation failed: contains "fail" keyword');
+        // Main processing span that contains all operations
+        $processingSpan = null;
+        if ($this->apm && $this->apm->isEnabled()) {
+            $processingSpan = $this->apm->startSpan('Process message', 'app', 'handler');
+        }
+        
+        try {
+            // Span 1: Validate message (child of processing span)
+            if ($this->apm && $this->apm->isEnabled()) {
+                $validationSpan = $this->apm->startSpan('Validate message', 'app', 'validation', null, $processingSpan);
+                try {
+                    usleep(20000); // 20ms
+                    
+                    // Check if message contains "fail"
+                    if (isset($data['data']) && str_contains($data['data'], 'fail')) {
+                        throw new \InvalidArgumentException('Message validation failed: contains "fail" keyword');
+                    }
+                } finally {
+                    $this->apm->stopSpan($validationSpan);
                 }
-            }, ['component' => 'validator']);
-        }
-        
-        // Span 2: Database operation
-        if ($this->apm) {
-            $this->apm->captureCurrentSpan('SELECT * FROM users WHERE id = ?', 'db.mysql.query', function() {
-                usleep(50000); // 50ms - simulate DB query
-            }, [
-                'db' => [
-                    'type' => 'mysql',
-                    'statement' => 'SELECT * FROM users WHERE id = ?',
-                    'instance' => 'app_db'
-                ]
-            ]);
-        }
-        
-        // Span 3: External API call
-        if ($this->apm) {
-            $this->apm->captureCurrentSpan('POST external-api.example.com', 'external.http', function() use ($data) {
-                usleep(80000); // 80ms - simulate API call
-                
-                // Simulate API error for "error" messages
-                if (isset($data['data']) && str_contains($data['data'], 'error')) {
-                    throw new \RuntimeException('External API returned 500: Service unavailable');
+            }
+            
+            // Span 2: Database operation (child of processing span)
+            if ($this->apm && $this->apm->isEnabled()) {
+                $dbSpan = $this->apm->startSpan('SELECT * FROM users WHERE id = ?', 'db', 'mysql', null, $processingSpan);
+                $this->apm->setSpanCustomData($dbSpan, [
+                    'db' => [
+                        'type' => 'mysql',
+                        'statement' => 'SELECT * FROM users WHERE id = ?',
+                        'instance' => 'app_db'
+                    ]
+                ]);
+                try {
+                    usleep(50000); // 50ms - simulate DB query
+                } finally {
+                    $this->apm->stopSpan($dbSpan);
                 }
-            }, [
-                'http' => [
-                    'url' => 'https://external-api.example.com/process',
-                    'method' => 'POST'
-                ]
-            ]);
-        }
-        
-        // Span 4: Cache operation
-        if ($this->apm) {
-            $this->apm->captureCurrentSpan('redis.set', 'cache.redis', function() use ($messageId) {
-                usleep(10000); // 10ms
-            }, [
-                'cache' => [
-                    'key' => "processed:$messageId",
-                    'ttl' => 3600
-                ]
-            ]);
-        }
-        
-        if ($this->logger) {
-            $this->logger->info('Message processed successfully', [
-                'message_id' => $messageId,
-                'data' => $data,
-                'duration_ms' => 160
-            ]);
+            }
+            
+            // Span 3: External API call (child of processing span)
+            if ($this->apm && $this->apm->isEnabled()) {
+                $apiSpan = $this->apm->startSpan('POST external-api.example.com', 'external', 'http', null, $processingSpan);
+                $this->apm->setSpanCustomData($apiSpan, [
+                    'http' => [
+                        'url' => 'https://external-api.example.com/process',
+                        'method' => 'POST'
+                    ]
+                ]);
+                try {
+                    usleep(80000); // 80ms - simulate API call
+                    
+                    // Simulate API error for "error" messages
+                    if (isset($data['data']) && str_contains($data['data'], 'error')) {
+                        throw new \RuntimeException('External API returned 500: Service unavailable');
+                    }
+                } finally {
+                    $this->apm->stopSpan($apiSpan);
+                }
+            }
+            
+            // Span 4: Cache operation (child of processing span)
+            if ($this->apm && $this->apm->isEnabled()) {
+                $cacheSpan = $this->apm->startSpan('redis.set', 'cache', 'redis', null, $processingSpan);
+                $this->apm->setSpanCustomData($cacheSpan, [
+                    'cache' => [
+                        'key' => "processed:$messageId",
+                        'ttl' => 3600
+                    ]
+                ]);
+                try {
+                    usleep(10000); // 10ms
+                } finally {
+                    $this->apm->stopSpan($cacheSpan);
+                }
+            }
+            
+            if ($this->logger) {
+                $this->logger->info('Message processed successfully', [
+                    'message_id' => $messageId,
+                    'data' => $data,
+                    'duration_ms' => 160
+                ]);
+            }
+        } finally {
+            // Always stop the main processing span
+            if ($processingSpan && $this->apm) {
+                $this->apm->stopSpan($processingSpan);
+            }
         }
     }
 }

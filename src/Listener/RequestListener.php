@@ -29,6 +29,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
+use Symfony\Component\HttpKernel\Event\ControllerEvent;
+use Symfony\Component\HttpKernel\Event\ControllerArgumentsEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 class RequestListener implements EventSubscriberInterface
@@ -36,6 +38,7 @@ class RequestListener implements EventSubscriberInterface
     private ElasticApmInteractorInterface $interactor;
     private TransactionNamingStrategyInterface $namingStrategy;
     private array $transactions = [];
+    private array $controllerSpans = [];
 
     public function __construct(
         ElasticApmInteractorInterface $interactor,
@@ -49,6 +52,8 @@ class RequestListener implements EventSubscriberInterface
     {
         return [
             KernelEvents::REQUEST => ['onKernelRequest', 2048],
+            KernelEvents::CONTROLLER => ['onKernelController', 128],
+            KernelEvents::CONTROLLER_ARGUMENTS => ['onKernelControllerArguments', 0],
             KernelEvents::RESPONSE => ['onKernelResponse', -2048],
             KernelEvents::FINISH_REQUEST => ['onKernelFinishRequest', -2048],
             KernelEvents::TERMINATE => ['onKernelTerminate', -1024],
@@ -79,6 +84,63 @@ class RequestListener implements EventSubscriberInterface
         ]);
     }
 
+    public function onKernelController(ControllerEvent $event): void
+    {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
+        $request = $event->getRequest();
+        $requestId = spl_object_id($request);
+        
+        if (!isset($this->transactions[$requestId])) {
+            return;
+        }
+
+        // Start controller span
+        $controller = $event->getController();
+        $controllerName = $this->getControllerName($controller);
+        
+        $span = $this->interactor->startSpan(
+            'controller',
+            'app',
+            'controller',
+            $this->transactions[$requestId]
+        );
+        
+        $this->controllerSpans[$requestId] = $span;
+        
+        // Update transaction name if we have better information
+        if ($controllerName && $controllerName !== 'unknown') {
+            $this->transactions[$requestId]->setName($controllerName);
+        }
+        
+        // Add controller metadata
+        $this->interactor->setCustomContext([
+            'controller' => [
+                'class' => is_array($controller) ? get_class($controller[0]) : get_class($controller),
+                'method' => is_array($controller) ? $controller[1] : '__invoke',
+                'route' => $request->attributes->get('_route', 'unknown'),
+                'route_params' => $request->attributes->get('_route_params', []),
+            ]
+        ]);
+    }
+    
+    public function onKernelControllerArguments(ControllerArgumentsEvent $event): void
+    {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
+        $requestId = spl_object_id($event->getRequest());
+        
+        // Stop controller span
+        if (isset($this->controllerSpans[$requestId])) {
+            $this->interactor->stopSpan($this->controllerSpans[$requestId]);
+            unset($this->controllerSpans[$requestId]);
+        }
+    }
+
     public function onKernelResponse(ResponseEvent $event): void
     {
         if (!$event->isMainRequest()) {
@@ -102,6 +164,13 @@ class RequestListener implements EventSubscriberInterface
         
         if (isset($this->transactions[$requestId])) {
             $transaction = $this->transactions[$requestId];
+            
+            // Stop any remaining controller spans
+            if (isset($this->controllerSpans[$requestId])) {
+                $this->interactor->stopSpan($this->controllerSpans[$requestId]);
+                unset($this->controllerSpans[$requestId]);
+            }
+            
             $this->interactor->stopTransaction($transaction);
             unset($this->transactions[$requestId]);
         }
@@ -141,5 +210,25 @@ class RequestListener implements EventSubscriberInterface
         }
         
         return $sanitized;
+    }
+    
+    private function getControllerName($controller): string
+    {
+        if (is_array($controller)) {
+            return sprintf('%s::%s', get_class($controller[0]), $controller[1]);
+        }
+        
+        if (is_object($controller)) {
+            if (method_exists($controller, '__invoke')) {
+                return get_class($controller) . '::__invoke';
+            }
+            return get_class($controller);
+        }
+        
+        if (is_string($controller)) {
+            return $controller;
+        }
+        
+        return 'unknown';
     }
 }

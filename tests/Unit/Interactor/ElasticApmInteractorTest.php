@@ -88,6 +88,7 @@ class ElasticApmInteractorTest extends TestCase
 
     public function testStopSpan(): void
     {
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
         $span = $this->interactor->startSpan('test_span', 'db');
         
         // This should not throw any exceptions
@@ -125,6 +126,7 @@ class ElasticApmInteractorTest extends TestCase
 
     public function testSetSpanCustomData(): void
     {
+        $transaction = $this->interactor->startTransaction('test_transaction', 'request');
         $span = $this->interactor->startSpan('test_span', 'db');
         
         $this->interactor->setSpanCustomData($span, ['custom' => 'data']);

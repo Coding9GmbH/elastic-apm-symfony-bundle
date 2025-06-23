@@ -44,7 +44,8 @@ class BlackholeInteractor implements ElasticApmInteractorInterface
         string $name,
         string $type,
         ?string $subtype = null,
-        ?Transaction $transaction = null
+        ?Transaction $transaction = null,
+        ?Span $parentSpan = null
     ): Span {
         // Return a real span object that won't be sent anywhere
         $span = new Span($name, $type, $transaction);

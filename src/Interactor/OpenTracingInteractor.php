@@ -143,7 +143,7 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
         }
     }
 
-    public function startSpan(string $name, string $type, ?string $subtype = null, ?Transaction $transaction = null): Span
+    public function startSpan(string $name, string $type, ?string $subtype = null, ?Transaction $transaction = null, ?Span $parentSpan = null): Span
     {
         if (!$this->enabled) {
             return new Span($name, $type, $transaction);
@@ -156,9 +156,9 @@ class OpenTracingInteractor implements ElasticApmInteractorInterface, LoggerAwar
             $span->setSubtype($subtype);
         }
 
-        $parentSpanId = !empty($this->spanStack) 
+        $parentSpanId = $parentSpan ? $parentSpan->getId() : (!empty($this->spanStack) 
             ? end($this->spanStack)->getId() 
-            : ($transaction ? $transaction->getId() : null);
+            : ($transaction ? $transaction->getId() : null));
 
         // Store OpenTracing-specific data
         $this->openTracingData[$span->getId()] = [

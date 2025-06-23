@@ -30,9 +30,45 @@ class RouteNamingStrategy implements TransactionNamingStrategyInterface
 {
     public function getTransactionName(Request $request): string
     {
-        $routeName = $request->attributes->get('_route', 'unknown');
+        $routeName = $request->attributes->get('_route');
         $method = $request->getMethod();
 
-        return sprintf('%s %s', $method, $routeName);
+        // If we have a route name, use it
+        if ($routeName) {
+            // Remove common prefixes/suffixes for cleaner names
+            $routeName = preg_replace('/^(app_|admin_|api_)/', '', $routeName);
+            $routeName = preg_replace('/(_index|_show|_create|_update|_delete)$/', '', $routeName);
+            
+            return sprintf('%s %s', $method, $routeName);
+        }
+
+        // Try to get controller information
+        $controller = $request->attributes->get('_controller');
+        if ($controller) {
+            // Handle different controller formats
+            if (str_contains($controller, '::')) {
+                // Format: App\Controller\HomeController::index
+                $parts = explode('::', $controller);
+                $className = basename(str_replace('\\', '/', $parts[0]));
+                $methodName = $parts[1] ?? 'unknown';
+                
+                // Remove "Controller" suffix
+                $className = preg_replace('/Controller$/', '', $className);
+                
+                return sprintf('%s %s::%s', $method, $className, $methodName);
+            }
+        }
+
+        // Fallback to path-based naming
+        $path = $request->getPathInfo();
+        if ($path && $path !== '/') {
+            // Clean up path for better readability
+            $path = trim($path, '/');
+            $path = preg_replace('/\d+/', '{id}', $path); // Replace IDs with placeholder
+            
+            return sprintf('%s /%s', $method, $path);
+        }
+
+        return sprintf('%s /', $method);
     }
 }

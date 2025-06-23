@@ -29,6 +29,7 @@ class Span
     private ?string $subtype = null;
     private ?string $action = null;
     private ?Transaction $transaction = null;
+    private ?Span $parentSpan = null;
     private ?float $startTime = null;
     private ?float $duration = null;
     private array $context = [];
@@ -82,6 +83,16 @@ class Span
         return $this->action;
     }
     
+    public function setParentSpan(?Span $parentSpan): void
+    {
+        $this->parentSpan = $parentSpan;
+    }
+    
+    public function getParentSpan(): ?Span
+    {
+        return $this->parentSpan;
+    }
+    
     public function start(): void
     {
         $this->startTime = microtime(true);
@@ -126,10 +137,15 @@ class Span
     
     public function toArray(): array
     {
+        // Determine parent_id: if we have a parent span, use its ID, otherwise use transaction ID
+        $parentId = $this->parentSpan 
+            ? $this->parentSpan->getId() 
+            : ($this->transaction ? $this->transaction->getId() : null);
+            
         return [
             'id' => $this->id,
             'transaction_id' => $this->transaction ? $this->transaction->getId() : null,
-            'parent_id' => $this->transaction ? $this->transaction->getId() : null,
+            'parent_id' => $parentId,
             'trace_id' => $this->transaction ? $this->transaction->getTraceId() : null,
             'name' => $this->name,
             'type' => $this->type,

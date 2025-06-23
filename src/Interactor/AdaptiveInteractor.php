@@ -58,9 +58,10 @@ class AdaptiveInteractor implements ElasticApmInteractorInterface
         string $name,
         string $type,
         ?string $subtype = null,
-        ?Transaction $transaction = null
+        ?Transaction $transaction = null,
+        ?Span $parentSpan = null
     ): Span {
-        return $this->interactor->startSpan($name, $type, $subtype, $transaction);
+        return $this->interactor->startSpan($name, $type, $subtype, $transaction, $parentSpan);
     }
     
     public function stopSpan(Span $span): void

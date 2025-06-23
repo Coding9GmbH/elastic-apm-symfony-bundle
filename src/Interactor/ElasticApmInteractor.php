@@ -70,6 +70,11 @@ class ElasticApmInteractor implements ElasticApmInteractorInterface
             // Send the transaction to APM server
             $this->client->sendTransaction($transaction);
             
+            // Send all spans associated with this transaction
+            foreach ($transaction->getSpans() as $span) {
+                $this->client->sendSpan($span);
+            }
+            
             if ($transaction === $this->currentTransaction) {
                 $this->currentTransaction = null;
             }
@@ -80,9 +85,14 @@ class ElasticApmInteractor implements ElasticApmInteractorInterface
         string $name,
         string $type,
         ?string $subtype = null,
-        ?Transaction $transaction = null
+        ?Transaction $transaction = null,
+        ?Span $parentSpan = null
     ): Span {
         $transaction = $transaction ?? $this->currentTransaction;
+        
+        if (!$transaction) {
+            throw new \RuntimeException('No active transaction for span');
+        }
         
         $span = new Span($name, $type, $transaction);
         
@@ -90,7 +100,14 @@ class ElasticApmInteractor implements ElasticApmInteractorInterface
             $span->setSubtype($subtype);
         }
         
+        if ($parentSpan !== null) {
+            $span->setParentSpan($parentSpan);
+        }
+        
         $span->start();
+        
+        // Add span to transaction
+        $transaction->addSpan($span);
         
         return $span;
     }
@@ -103,8 +120,7 @@ class ElasticApmInteractor implements ElasticApmInteractorInterface
         
         $span->stop();
         
-        // Send the span to APM server
-        $this->client->sendSpan($span);
+        // Don't send spans individually - they'll be sent with the transaction
     }
     
     public function captureException(\Throwable $exception): void

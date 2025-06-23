@@ -68,6 +68,57 @@ class ExceptionListener implements EventSubscriberInterface
             }
         }
 
+        // Add request context
+        $request = $event->getRequest();
+        $this->interactor->setCustomContext([
+            'request' => [
+                'url' => $request->getUri(),
+                'method' => $request->getMethod(),
+                'headers' => $this->sanitizeHeaders($request->headers->all()),
+                'body' => $this->getRequestBody($request),
+            ],
+            'response' => [
+                'status_code' => method_exists($exception, 'getStatusCode') ? $exception->getStatusCode() : 500,
+            ],
+            'user' => [
+                'ip' => $request->getClientIp(),
+                'user_agent' => $request->headers->get('User-Agent'),
+            ],
+        ]);
+
         $this->interactor->captureException($exception);
+    }
+    
+    private function sanitizeHeaders(array $headers): array
+    {
+        $sensitive = ['authorization', 'cookie', 'set-cookie', 'x-api-key', 'x-auth-token'];
+        $sanitized = [];
+        
+        foreach ($headers as $key => $values) {
+            $lowerKey = strtolower($key);
+            if (!in_array($lowerKey, $sensitive, true)) {
+                $sanitized[$key] = $values;
+            } else {
+                $sanitized[$key] = ['[REDACTED]'];
+            }
+        }
+        
+        return $sanitized;
+    }
+    
+    private function getRequestBody($request): ?string
+    {
+        $content = $request->getContent();
+        
+        if (empty($content)) {
+            return null;
+        }
+        
+        // Limit body size
+        if (strlen($content) > 10000) {
+            return substr($content, 0, 10000) . '... (truncated)';
+        }
+        
+        return $content;
     }
 }
